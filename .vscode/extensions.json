@@ -1,0 +1,6 @@
+{
+  "recommendations": ["Vue.volar"],
+  "typescript.preferences.autoImportFileExcludePatterns": ["vue-router/auto$"],
+  "typescript.tsdk": "node_modules/typescript/lib",
+
+}
