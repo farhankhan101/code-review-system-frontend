@@ -2,7 +2,7 @@
   <div class="flex justify-center items-center min-h-screen dark:bg-gray-900 text-white">
     <div class="border w-full max-w-md p-6 space-y-8 sm:p-8 bg-white rounded-lg shadow-xl dark:bg-gray-800">
       <h2 class="raleway-medium text-start text-4xl font-bold text-gray-900 dark:text-white">
-        Sign Up
+        Sign Up Updated
       </h2>
       <form @submit.prevent="handleSubmit" class="mt-8 space-y-6">
         <div>
