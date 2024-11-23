@@ -1,9 +1,9 @@
 <template>
-    <div class="w-full flex light:text-black dark:text-white bg-fixed">
+    <div class="w-full flex bg-black light:text-black text-white dark:text-white bg-fixed">
         <div class="w-1/2 flex justify-center item-center">
         <div class="flex flex-col justify-center items-center">
-        <img class="w-72" src="/src/assets/nav-logo.svg" alt="">
-        <h1 class="text-center mt-5 text-5xl light:text-black dark:text-white raleway-medium font-bold">Silquetech OMS</h1>
+        <img class="w-72" src="/src/assets/logo.png" alt="">
+        <h1 class="text-center mt-5 text-5xl light:text-black dark:text-white raleway-medium font-bold">AI Powered Code Review System</h1>
         </div>
         </div>
         <div class="w-1/2 py-10">
