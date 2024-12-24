@@ -8,7 +8,25 @@
       <p class="mt-4 text-gray-500 dark:text-gray-400">
         Let’s get you all set up so you can verify your personal account and begin setting up your profile.
       </p>
+      <div class="mt-6">
+        <h1 class="text-gray-500 dark:text-gray-300">Select your coding experience</h1>
 
+        <div class="mt-3 flex gap-4">
+          <button
+            v-for="(type, index) in accountTypes"
+            :key="index"
+            :class="[
+              'flex justify-center px-6 py-3 rounded-lg border focus:outline-none',
+              selectedAccountType === type
+                ? 'bg-blue-500 text-white'
+                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100',
+            ]"
+            @click="selectAccountType(type)"
+          >
+            {{ type }}
+          </button>
+        </div>
+      </div>
       <form @submit.prevent="handleSubmit" class="grid grid-cols-1 gap-6 mt-8 md:grid-cols-2">
         <div v-for="(label, field) in fields" :key="field">
           <label :for="field" class="block mb-2 text-sm text-gray-600 dark:text-gray-200">
@@ -41,7 +59,7 @@
 </template>
 
 <script>
-import { defineComponent, reactive } from "vue";
+import { defineComponent, reactive,ref } from "vue";
 import { z } from "zod";
 
 const signupFormSchema = z.object({
@@ -64,7 +82,8 @@ export default defineComponent({
       password_1: "",
       password_2: "",
     });
-
+    const accountTypes = ["Beginner", "Intermediate", "Professional"];
+    const selectedAccountType = ref("Beginner");
     const errors = reactive({});
     const fields = {
       username: "User Name",
@@ -88,7 +107,9 @@ export default defineComponent({
         errors[field] = err.errors[0].message;
       }
     };
-
+    const selectAccountType = (type) => {
+      selectedAccountType.value = type;
+    };
     const handleSubmit = () => {
       try {
         signupFormSchema
@@ -110,7 +131,8 @@ export default defineComponent({
       errors,
       fields,
       validateField,
-      handleSubmit,
+      handleSubmit,selectAccountType,
+      accountTypes,selectedAccountType
     };
   },
 });
