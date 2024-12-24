@@ -1,148 +1,117 @@
 <template>
-  <div class="flex justify-center items-center min-h-screen dark:bg-gray-900 text-white">
-    <div class="border w-full max-w-md p-6 space-y-8 sm:p-8 bg-white rounded-lg shadow-xl dark:bg-gray-800">
-      <h2 class="raleway-medium text-start text-4xl font-bold text-gray-900 dark:text-white">
-        Sign Up Updated
-      </h2>
-      <form @submit.prevent="handleSubmit" class="mt-8 space-y-6">
-        <div>
-          <label for="firstName" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-            Username
+  <div class="flex items-center w-full max-w-3xl p-8 mx-auto lg:px-12 lg:w-3/5">
+    <div class="w-full">
+      <h1 class="text-2xl font-semibold tracking-wider text-gray-800 capitalize dark:text-white">
+        Get your free account now.
+      </h1>
+
+      <p class="mt-4 text-gray-500 dark:text-gray-400">
+        Let’s get you all set up so you can verify your personal account and begin setting up your profile.
+      </p>
+
+      <form @submit.prevent="handleSubmit" class="grid grid-cols-1 gap-6 mt-8 md:grid-cols-2">
+        <div v-for="(label, field) in fields" :key="field">
+          <label :for="field" class="block mb-2 text-sm text-gray-600 dark:text-gray-200">
+            {{ label }}
           </label>
-          <input 
-            v-model="formValues.username"
-            type="text" 
-            id="firstName" 
-            class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" 
-            placeholder="Username" 
-            required 
+          <input
+            v-model="formValues[field]"
+            :type="field.includes('password') ? 'password' : field === 'email' ? 'email' : 'text'"
+            :placeholder="'Enter your ' + label.toLowerCase()"
+            class="block w-full px-5 py-3 mt-2 text-gray-700 bg-white border rounded-lg focus:ring-blue-400 focus:border-blue-400"
+            @input="validateField(field)"
           />
+          <p v-if="errors[field]" class="mt-1 text-sm text-red-500">{{ errors[field] }}</p>
         </div>
-        <div>
-          <label for="firstName" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-            First Name
-          </label>
-          <input 
-            v-model="formValues.first_name"
-            type="text" 
-            id="firstName" 
-            class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" 
-            placeholder="First Name" 
-            required 
-          />
-        </div>
-        <div>
-          <label for="lastName" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-            Last Name
-          </label>
-          <input 
-            v-model="formValues.last_name"
-            type="text" 
-            id="lastName" 
-            class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" 
-            placeholder="Last Name" 
-            required 
-          />
-        </div>
-        <div>
-          <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-            Email
-          </label>
-          <input 
-            v-model="formValues.email"
-            type="email" 
-            id="email" 
-            class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" 
-            placeholder="name@company.com" 
-            required 
-          />
-        </div>
-        <div>
-          <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-            Password
-          </label>
-          <input 
-            v-model="formValues.password_1"
-            type="password" 
-            id="password" 
-            class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" 
-            placeholder="••••••••" 
-            required 
-          />
-        </div>
-        <div>
-          <label for="confirmPassword" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-            Confirm Password
-          </label>
-          <input 
-            v-model="formValues.password_2"
-            type="password" 
-            id="confirmPassword" 
-            class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" 
-            placeholder="••••••••" 
-            required 
-          />
-          <label for="remember" class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">
-              Agree with <router-link to="" class="text-blue-800 font-bold">Privacy</router-link> and <router-link to="" class="text-blue-800 font-bold">policy</router-link>
-          </label>
-        </div>
-        <div class="flex justify-center">
-          <button 
-            type="submit" 
-            class="w-full px-4 py-2 text-base font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-            Signup
-          </button>
-        </div>
-        <div class="text-sm font-medium text-gray-900 dark:text-white text-center">
-            Not registered yet? 
-            <router-link to="/auth/signin" class="text-blue-600 hover:underline dark:text-blue-500">Create account</router-link>
-        </div>
+        <button
+          type="submit"
+          class="w-full px-6 py-3 mt-4 text-white bg-blue-500 rounded-lg hover:bg-blue-400 focus:outline-none focus:ring focus:ring-blue-300"
+        >
+          Sign Up
+        </button>
       </form>
+        <p class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+          Already have an account?
+          <router-link to="/auth/signin" class="text-blue-600 hover:underline dark:text-blue-500">
+            Signin
+          </router-link>
+        </p>
     </div>
   </div>
 </template>
 
 <script>
-import axios from "axios";
-import { defineComponent, ref } from "vue";
+import { defineComponent, reactive } from "vue";
+import { z } from "zod";
+
+const signupFormSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  first_name: z.string().min(1, "First name is required"),
+  last_name: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email address"),
+  password_1: z.string().min(6, "Password must be at least 6 characters"),
+  password_2: z.string().min(6, "Password must be at least 6 characters"),
+});
 
 export default defineComponent({
   name: "Signup",
   setup() {
-    const formValues = ref({
-      username:"",
+    const formValues = reactive({
+      username: "",
       first_name: "",
       last_name: "",
       email: "",
       password_1: "",
-      password_2: ""
+      password_2: "",
     });
-    const BaseUrl = 'http://localhost:8000'
-    const handleSubmit = async () => {
+
+    const errors = reactive({});
+    const fields = {
+      username: "User Name",
+      first_name: "First Name",
+      last_name: "Last Name",
+      email: "Email",
+      password_1: "Password",
+      password_2: "Confirm Password",
+    };
+
+    const validateField = (field) => {
       try {
-        const response = await axios.post(`${BaseUrl}/user/users/register/`, formValues.value);
-        console.log("User created successfully:", response.data);
-        alert("User created successfully!");
-      } catch (error) {
-        console.error("Error creating user:", error);
-        alert("Error creating user!");
+        if (field === "password_2" && formValues.password_1 !== formValues.password_2) {
+          errors[field] = "Passwords must match";
+        } else {
+          const fieldSchema = z.object({ [field]: signupFormSchema.shape[field] });
+          fieldSchema.parse({ [field]: formValues[field] });
+          delete errors[field];
+        }
+      } catch (err) {
+        errors[field] = err.errors[0].message;
+      }
+    };
+
+    const handleSubmit = () => {
+      try {
+        signupFormSchema
+          .refine((data) => data.password_1 === data.password_2, {
+            message: "Passwords must match",
+            path: ["password_2"],
+          })
+          .parse(formValues);
+        alert("Form submitted successfully!");
+      } catch (err) {
+        err.errors.forEach((e) => {
+          errors[e.path[0]] = e.message;
+        });
       }
     };
 
     return {
       formValues,
-      handleSubmit
+      errors,
+      fields,
+      validateField,
+      handleSubmit,
     };
   },
 });
 </script>
-
-<style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Varela+Round&display=swap');
-.raleway-medium {
-  font-family: "Raleway", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 600;
-  font-style: normal;
-}
-</style>

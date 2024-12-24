@@ -1,36 +1,47 @@
 <template>
-  <div class="flex justify-center items-center min-h-screen dark:bg-gray-900 text-white">
-    <div class="border w-full max-w-md p-6 space-y-8 sm:p-8 bg-white rounded-lg shadow-xl dark:bg-gray-800">
-      <h2 class="raleway-medium text-start text-4xl font-bold text-gray-900 dark:text-white">
-        Sign in
+  <div class="flex items-center w-full max-w-3xl p-8 mx-auto lg:px-12 lg:w-3/5 min-h-screen">
+    <div class="w-full bg-white rounded-lg  dark:bg-gray-800 p-8">
+      <h2 class="text-2xl font-semibold tracking-wider text-gray-800 capitalize dark:text-white">
+        Sign in to your account
       </h2>
-      <form class="mt-8 space-y-6" @submit.prevent="handleSubmit">
+
+      <p class="mt-4 text-gray-500 dark:text-gray-400">
+        Access your account by entering your credentials below.
+      </p>
+
+      <form @submit.prevent="handleSubmit" class="grid grid-cols-1 gap-6 mt-8">
         <div>
-          <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+          <label for="email" class="block mb-2 text-sm text-gray-600 dark:text-gray-200">
             Email
           </label>
           <input
+            v-model="formValue.email"
             type="email"
             id="email"
-            v-model="formValue.email"
-            class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            placeholder="name@company.com"
+            placeholder="Enter your email"
+            class="block w-full px-5 py-3 mt-2 text-gray-700 bg-white border rounded-lg focus:ring-blue-400 focus:border-blue-400 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+            @input="validateField('email')"
             required
           />
+          <p v-if="errors.email" class="text-red-500 text-sm mt-1">{{ errors.email }}</p>
         </div>
+
         <div>
-          <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+          <label for="password" class="block mb-2 text-sm text-gray-600 dark:text-gray-200">
             Password
           </label>
           <input
+            v-model="formValue.password"
             type="password"
             id="password"
-            v-model="formValue.password"
-            class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            placeholder="••••••••"
+            placeholder="Enter your password"
+            class="block w-full px-5 py-3 mt-2 text-gray-700 bg-white border rounded-lg focus:ring-blue-400 focus:border-blue-400 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+            @input="validateField('password')"
             required
           />
+          <p v-if="errors.password" class="text-red-500 text-sm mt-1">{{ errors.password }}</p>
         </div>
+
         <div class="flex items-center justify-between">
           <div class="flex items-center">
             <input
@@ -47,21 +58,21 @@
             Forgot Password?
           </a>
         </div>
-        <div class="flex justify-center">
-          <button
-            type="submit"
-            class="w-full px-4 py-2 text-base font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-          >
-            Login
-          </button>
-        </div>
-        <div class="text-sm font-medium text-gray-900 dark:text-white text-center">
-          Not registered yet?
-          <router-link to="/auth/signup" class="text-blue-600 hover:underline dark:text-blue-500">
-            Create account
-          </router-link>
-        </div>
+
+        <button
+          type="submit"
+          class="block w-full px-6 py-3 mt-4 text-white bg-blue-500 rounded-lg hover:bg-blue-400 focus:outline-none focus:ring focus:ring-blue-300"
+        >
+          Sign In
+        </button>
       </form>
+
+      <p class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+        Don't have an account?
+        <router-link to="/auth/signup" class="text-blue-600 hover:underline dark:text-blue-500">
+          Sign up here
+        </router-link>
+      </p>
     </div>
   </div>
 </template>
@@ -73,28 +84,57 @@ import axios from "axios";
 export default defineComponent({
   name: "Signin",
   setup() {
-    // Reactive object to manage form values
     const formValue = reactive({
       email: "",
       password: "",
-      // remember: false,
+      remember: false,
     });
 
-    const BaseUrl = 'http://localhost:8000'
+    const errors = reactive({
+      email: "",
+      password: "",
+    });
+
+    const BaseUrl = "http://localhost:8000";
+
+    const validateField = (field) => {
+      if (field === "email") {
+        const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formValue.email);
+        errors.email = isValidEmail ? "" : "Please enter a valid email address.";
+      } else if (field === "password") {
+        errors.password = formValue.password.length >= 6 ? "" : "Password must be at least 6 characters.";
+      }
+    };
+
     const handleSubmit = async () => {
+      validateField("email");
+      validateField("password");
+
+      if (errors.email || errors.password) {
+        alert("Please fix the errors before submitting.");
+        return;
+      }
+
       try {
-        console.log(formValue)
-        const response = await axios.post(`${BaseUrl}/user/users/login/`, formValue);
-        console.log("Response:", response.data);
+        const response = await axios.post(
+          `${BaseUrl}/user/users/login/`,
+          formValue,
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        );
         alert("Login successful!");
       } catch (error) {
-        console.error("Error:", error.response || error);
-        alert("Login failed! Please try again.");
+        const errorMessage =
+          error.response?.data?.message || "Login failed! Please try again.";
+        alert(errorMessage);
       }
     };
 
     return {
       formValue,
+      errors,
+      validateField,
       handleSubmit,
     };
   },
@@ -106,7 +146,6 @@ export default defineComponent({
 
 .raleway-medium {
   font-family: "Raleway", sans-serif;
-  font-optical-sizing: auto;
   font-weight: 600;
   font-style: normal;
 }
