@@ -1,16 +1,17 @@
 <template>
   <div class="flex min-h-screen">
     <!-- <TopHeader /> -->
-    <Sidebar :style="{
-        position: 'absolute',
-        left: isSidebarVisible ? '0' : '-285px',
-        transitionProperty: 'left',
-        transitionDuration: '0.5s',
-        transitionDelay: '0.01s',
-      }" />
+    
     <Header />
-    <div class="flex flex-col flex-1 transition-all duration-300 overflow-hidden" :class="[isSidebarVisible ? 'sm:ml-64' : 'ml-0']">
-      <main class="flex-grow px-5">
+    <div class="h-screen flex flex-col flex-1 transition-all duration-300 overflow-hidden" :class="[isSidebarVisible ? 'sm:ml-64' : 'ml-0']">
+      <Sidebar :style="{
+          position: 'absolute',
+          left: isSidebarVisible ? '0' : '-285px',
+          transitionProperty: 'left',
+          transitionDuration: '0.5s',
+          transitionDelay: '0.01s',
+        }" />
+      <main class="flex-grow px-0">
         <router-view />
       </main>
       <Footer />

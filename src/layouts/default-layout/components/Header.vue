@@ -8,11 +8,10 @@
           <button
             @click="sidebarStore.toggleSidebar"
             type="button"
-            class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
+            class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
           >
             <span class="sr-only">Open sidebar</span>
             <svg
-              @click="sidebarStore.toggleSidebar"
               class="w-6 h-6"
               aria-hidden="true"
               fill="currentColor"
@@ -26,24 +25,7 @@
             </svg>
           </button>
           <div class="flex items-center">
-            <svg
-              @click="sidebarStore.toggleSidebar"
-              class="cursor-pointer w-6 h-6 text-gray-800 dark:text-white"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 6h8m-8 4h12M6 14h8m-8 4h12"
-              />
-            </svg>
+            
             <router-link to="/dashboard" class="flex ms-2 md:me-24">
               <span
                 class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white"
