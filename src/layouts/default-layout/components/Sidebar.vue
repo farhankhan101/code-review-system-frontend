@@ -1,5 +1,6 @@
 <template>
   <aside
+    v-bind="$attrs"
     id="logo-sidebar"
     class="fixed top-0 left-0 z-40 w-64 h-screen pt-14 transition-transform bg-white border-r border-gray-200 sm:translate-x-0 dark:bg-gray-800 dark:border-gray-700"
     aria-label="Sidebar"
@@ -39,27 +40,65 @@
           v-for="(review, index) in historyReview"
           :key="index"
           :class="{ 'bg-gray-100 rounded-md': isRouteActive(review.route) }"
+          class="relative"
         >
           <router-link
             :to="review.route"
-            class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
+            class="flex justify-between items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
           >
-            <span class="ms-3">{{ review.name }}</span>
+            <span class="">{{ review.name }}</span>
+            <svg
+              class="w-6 h-6 text-gray-800 dark:text-white cursor-pointer"
+              @click="showPopover(index)"
+              aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="2"
+                d="M12 6h.01M12 12h.01M12 18h.01"
+              />
+            </svg>
           </router-link>
+          <div
+            v-if="popoverIndex === index"
+            class="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg p-2 z-50"
+          >
+            <button
+              class="w-full text-left p-2 hover:bg-gray-200"
+              @click="updateReview(index)"
+            >
+              Update Name
+            </button>
+            <button
+              class="w-full text-left p-2 text-red-500 hover:bg-gray-200"
+              @click="deleteReview(index)"
+            >
+              Delete
+            </button>
+          </div>
         </li>
       </ul>
 
       <div class="bg-white absolute bottom-0 left-0 w-full px-3 py-2">
-        <button class="w-full bg-red-500 text-white p-3 rounded-lg text-sm hover:bg-red-700">
+        <button
+          class="w-full bg-red-500 text-white p-3 rounded-lg text-sm hover:bg-red-700"
+        >
           Log Out
         </button>
       </div>
     </div>
   </aside>
-
   <fwb-modal size="xs" v-if="isShowModal" @close="closeModal">
     <template #header>
-      <div class="flex items-center text-lg">Write name of your review</div>
+      <div class="flex items-center text-lg">
+        {{ isEditing ? "Update Review Name" : "Write name of your review" }}
+      </div>
     </template>
     <template #body>
       <input
@@ -68,7 +107,10 @@
         placeholder="Enter Review Name"
         v-model="reviewName"
       />
-      <button class="w-full bg-black p-3 text-white my-4" @click="addReview">
+      <button
+        class="w-full bg-black p-3 text-white my-4"
+        @click="isEditing ? confirmUpdate() : addReview()"
+      >
         Submit
       </button>
     </template>
@@ -76,10 +118,13 @@
 </template>
 
 <script lang="ts">
-import { ref, onMounted } from "vue";
-import { FwbModal } from 'flowbite-vue'
+import { ref, onMounted, watch } from "vue";
+import { FwbModal } from "flowbite-vue";
+import { useRouter } from "vue-router";
+
 
 export default {
+  // inheritAttrs: false,
   components: {
     FwbModal,
   },
@@ -88,8 +133,11 @@ export default {
     const isShowModal = ref(false);
     const reviewName = ref("");
     const historyReview = ref([]);
+    const popoverIndex = ref(null);
+    const isEditing = ref(false);
+    const editingIndex = ref(null);
+    const router = useRouter();
 
-    // Load reviews from localStorage
     onMounted(() => {
       const savedReviews = JSON.parse(localStorage.getItem("historyReview") || "[]");
       historyReview.value = savedReviews;
@@ -97,6 +145,8 @@ export default {
 
     const closeModal = () => {
       isShowModal.value = false;
+      reviewName.value = "";
+      popoverIndex.value = null;
     };
 
     const addReview = () => {
@@ -104,25 +154,74 @@ export default {
 
       const newReview = {
         name: reviewName.value,
-        route: `/${reviewName.value.replace(/\s+/g, "-").toLowerCase()}`, // Create route dynamically
+        route: `/${reviewName.value.replace(/\s+/g, "-").toLowerCase()}`,
       };
 
       historyReview.value.push(newReview);
-      localStorage.setItem("historyReview", JSON.stringify(historyReview.value)); // Save to localStorage
+      localStorage.setItem("historyReview", JSON.stringify(historyReview.value));
+      router.addRoute({
+        path: newReview.route,
+        name: newReview.name,
+        component: () => import("@/views/dashboard/index.vue"),
+      });
       reviewName.value = "";
       isShowModal.value = false;
     };
 
-    const isRouteActive = (route: string) => {
+    const updateReview = (index) => {
+      isEditing.value = true;
+      editingIndex.value = index;
+      reviewName.value = historyReview.value[index].name;
+      isShowModal.value = true;
+    };
+
+    const confirmUpdate = () => {
+      const updatedName = reviewName.value.trim();
+      if (!updatedName) return;
+
+      const review = historyReview.value[editingIndex.value];
+      review.name = updatedName;
+      review.route = `/${updatedName.replace(/\s+/g, "-").toLowerCase()}`;
+      historyReview.value.splice(editingIndex.value, 1, review);
+      localStorage.setItem("historyReview", JSON.stringify(historyReview.value));
+      router.addRoute({
+        path: review.route,
+        name: review.name,
+        component: () => import("@/views/dashboard/index.vue"),
+      });
+      closeModal();
+    };
+
+    const deleteReview = (index) => {
+      historyReview.value.splice(index, 1);
+      localStorage.setItem("historyReview", JSON.stringify(historyReview.value));
+      popoverIndex.value = null;
+    };
+
+    const showPopover = (index) => {
+      popoverIndex.value = popoverIndex.value === index ? null : index;
+    };
+
+    const isRouteActive = (route) => {
       return location.pathname === route;
     };
+    watch(historyReview, () => {
+      router.replace({ path: router.currentRoute.value.fullPath });
+    });
 
     return {
       isShowModal,
       reviewName,
       historyReview,
+      popoverIndex,
+      isEditing,
+      editingIndex,
       closeModal,
       addReview,
+      updateReview,
+      confirmUpdate,
+      deleteReview,
+      showPopover,
       isRouteActive,
     };
   },
@@ -132,5 +231,16 @@ export default {
 <style scoped>
 .custom-scrollbar {
   scrollbar-width: thin;
+  scrollbar-color: #d4d4d4 transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #d4d4d4;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 </style>

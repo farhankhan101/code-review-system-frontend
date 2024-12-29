@@ -17,6 +17,7 @@
       <Footer />
     </div>
   </div>
+  
 </template>
 
 <script>

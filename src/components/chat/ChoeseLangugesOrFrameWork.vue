@@ -4,24 +4,27 @@
             <div class="flex flex-col">
                 <h1 class="text-4xl my-4">Select Your Choise For Reviewing Code</h1>
                 <select name="lang" v-model="selectedChoise">
+                    <option value="" disabled>Select Your Option</option>
                     <option v-for="(option,index) in options" :key="index" :value="index">{{ option }}</option>
                 </select>
             </div>
             <div v-if="selectedChoise == 'prog'" class="flex flex-col">
                 <h1 class="text-4xl my-4">Select The Programing Langugage</h1>
                 <select name="lang" v-model="programingLanguage">
+                    <option value="" disabled>Select Your Option</option>
                     <option v-for="(lang,index) in programingLanguages" :key="index" :value="index">{{ lang }}</option>
                 </select>
             </div>
             <div v-else-if="selectedChoise == 'Frk'" class="flex flex-col">
                 <h1 class="text-4xl my-4">Select The Frame Work that You prefer</h1>
                 <select name="lang" v-model="framework">
+                    <option value="" disabled>Select Your Option</option>
                     <option v-for="(framework,index) in frameworks" :key="index" :value="index">{{ framework }}</option>
                 </select>
             </div>
         </div>
         
-        <button class="w-full my-2 p-3 border border-black hover:bg-black hover:text-white">Next</button>
+        <button @click="savedAndNext()" class="w-full my-2 p-3 border border-black hover:bg-black hover:text-white">Next</button>
     </div>    
 </template>
   
@@ -30,8 +33,8 @@
   
   export default defineComponent({
     name: "LangOrFrameWork",
-    setup() {
-      const selectedChoise = ref('')
+    setup(_, { emit }) {
+        const selectedChoise = ref('')
       const options = ref({
         'prog' : "Programing Langugage",
         'Frk' :  "Frame work"  
@@ -53,7 +56,17 @@
             'vue' : 'Vue Js',
             'flutter' : 'Flutter'
         })
-      return { programingLanguage, programingLanguages, selectedChoise, options,framework, frameworks };
+        const savedAndNext = () => {
+            localStorage.setItem("choise", selectedChoise.value);
+            if(selectedChoise.value == 'prog'){
+                localStorage.setItem("programingLanguage", programingLanguage.value);
+            }else{
+                localStorage.setItem("framework", framework.value);
+            }
+            emit('next-step')
+        }
+
+      return { programingLanguage, programingLanguages, selectedChoise, options,framework, frameworks,savedAndNext };
     },
   });
   </script>

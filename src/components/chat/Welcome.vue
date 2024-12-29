@@ -8,7 +8,7 @@
         Analyze your code for style, efficiency, and security issues with ease.
       </p>
       <div class="text-center">
-        <button class="bg-blue-500 text-white px-6 py-2 rounded-full shadow-md transform hover:scale-110 transition-transform">
+        <button @click="$emit('next-step')"  class="bg-blue-500 text-white px-6 py-2 rounded-full shadow-md transform hover:scale-110 transition-transform">
           Let's Start
         </button>
       </div>
@@ -21,6 +21,7 @@ import { defineComponent, ref } from "vue";
 export default defineComponent({
   name: "Welcome",
   setup() {
+    
     return {};
   },
 });
