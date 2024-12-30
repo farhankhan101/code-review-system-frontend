@@ -2,7 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { routes as autoRoutes } from 'vue-router/auto-routes'; // Import auto-generated routes
 
 // Load saved reviews from localStorage
-const loadDynamicRoutes = () => {
+export const loadDynamicRoutes = () => {
+  console.log('loadDynamicRoutes');
   const savedReviews = JSON.parse(localStorage.getItem("historyReview") || "[]");
   return savedReviews.map((review) => ({
     path: review.route,
@@ -17,9 +18,14 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/dashboard',
+      name: 'DefaultLayout',
       component: () => import('@/layouts/default-layout/DefaultLayout.vue'),
       children: [
+        {
+          path: '',
+          name: 'Welcome',
+          component: () => import('@/views/welcome/Welcome.vue'),
+        },
         ...autoRoutes,
         ...loadDynamicRoutes(),
       ],
@@ -43,7 +49,6 @@ const router = createRouter({
   ],
 });
 
-// Watch for route additions
 export const addDynamicRoute = (review) => {
   const newRoute = {
     path: review.route,

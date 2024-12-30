@@ -121,7 +121,7 @@
 import { ref, onMounted, watch } from "vue";
 import { FwbModal } from "flowbite-vue";
 import { useRouter } from "vue-router";
-
+import { loadDynamicRoutes } from "@/router";
 
 export default {
   // inheritAttrs: false,
@@ -159,7 +159,7 @@ export default {
 
       historyReview.value.push(newReview);
       localStorage.setItem("historyReview", JSON.stringify(historyReview.value));
-      router.addRoute({
+      router.addRoute("DefaultLayout", { 
         path: newReview.route,
         name: newReview.name,
         component: () => import("@/views/dashboard/index.vue"),
@@ -184,11 +184,12 @@ export default {
       review.route = `/${updatedName.replace(/\s+/g, "-").toLowerCase()}`;
       historyReview.value.splice(editingIndex.value, 1, review);
       localStorage.setItem("historyReview", JSON.stringify(historyReview.value));
-      router.addRoute({
+      router.addRoute("DefaultLayout", {
         path: review.route,
         name: review.name,
         component: () => import("@/views/dashboard/index.vue"),
       });
+      router.push(review.route);
       closeModal();
     };
 
@@ -196,6 +197,7 @@ export default {
       historyReview.value.splice(index, 1);
       localStorage.setItem("historyReview", JSON.stringify(historyReview.value));
       popoverIndex.value = null;
+      router.push("/");
     };
 
     const showPopover = (index) => {
