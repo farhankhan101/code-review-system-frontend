@@ -7,7 +7,7 @@ export const useSidebarStore = defineStore('sidebar', () => {
   const toggleSidebar = () => {
     sidebarDisplay.value = !sidebarDisplay.value;
   };
-
+  
   return {
     sidebarDisplay,
     toggleSidebar,

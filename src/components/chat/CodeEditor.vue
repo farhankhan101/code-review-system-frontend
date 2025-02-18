@@ -1,8 +1,9 @@
 <template>
     <div class="sm:w-2/3 sm:mt-[48px] p-14 sm:p-0">
       <h1 class="text-4xl my-4">Enter Your Code for Review</h1>
+        <div class="w-ful h-50px py-3 p-2 text-white" style="background-color: rgb(30, 30, 30)">Ai Powered Code Review System</div>
+        <div class="editor-container sm:w-full sm:h-[300px] h-[300px]  shadow-lg" ref="monacoContainer"></div>
       
-      <div class="editor-container sm:w-full sm:h-[300px] h-[300px] rounded-sm shadow-lg" ref="monacoContainer"></div>
   
       <button
         class="w-full my-2 p-3 border border-black hover:bg-black hover:text-white"
@@ -70,7 +71,6 @@
   
   <style scoped>
   .editor-container {
-    border: 1px solid #ddd;
     overflow: hidden;
   }
   

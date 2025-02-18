@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { routes as autoRoutes } from 'vue-router/auto-routes'; // Import auto-generated routes
+import { useAuthStore } from '@/stores/auth';
 
 // Load saved reviews from localStorage
 export const loadDynamicRoutes = () => {
@@ -22,9 +23,9 @@ const router = createRouter({
       component: () => import('@/layouts/default-layout/DefaultLayout.vue'),
       children: [
         {
-          path: '',
-          name: 'Welcome',
-          component: () => import('@/views/welcome/Welcome.vue'),
+          path: '/',
+          name: 'Default',
+          component: () => import('@/views/default/index.vue'),
         },
         ...autoRoutes,
         ...loadDynamicRoutes(),
@@ -58,4 +59,37 @@ export const addDynamicRoute = (review) => {
   router.addRoute(newRoute);
 };
 
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore();
+  const user = authStore.getUser();
+
+  // authStore.checkIntegrity();
+
+  // console.log("User: ", user);
+  // console.log('AuthStore:', authStore);
+
+  // console.log("Heading to: ", to.path);
+  // console.log("Here from: ", from);
+  if (to.meta.middleware === "auth") {
+    // console.log("Going to auth middleware...");
+    if (authStore.isAuthenticated) {
+      // console.log("Authenticated");
+      next();
+    } else {
+      console.log("Not authenticated");
+      next(false);
+      router.push({path: "/auth", hash: "#login"});
+
+    }
+  } else {
+    if (authStore.isAuthenticated && to.path.startsWith("/auth")) {
+      if (!(to.path === "/auth")) {
+        router.push("/"); // Redirect to home
+      }
+    }
+  }
+
+  next();
+  return
+});
 export default router;
