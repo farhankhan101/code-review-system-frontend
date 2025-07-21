@@ -1,19 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { routes as autoRoutes } from 'vue-router/auto-routes'; // Import auto-generated routes
+import { routes as autoRoutes } from 'vue-router/auto-routes'; // This plugin must be configured in your vite.config.ts
 import { useAuthStore } from '@/stores/auth';
 
-// Load saved reviews from localStorage
-export const loadDynamicRoutes = () => {
-  console.log('loadDynamicRoutes');
-  const savedReviews = JSON.parse(localStorage.getItem("historyReview") || "[]");
-  return savedReviews.map((review) => ({
-    path: review.route,
-    name: review.name,
-    component: () => import('@//views/dashboard/index.vue'), // Use a generic component for dynamic routes
-  }));
-};
-
-// Initialize router
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -23,73 +11,57 @@ const router = createRouter({
       component: () => import('@/layouts/default-layout/DefaultLayout.vue'),
       children: [
         {
-          path: '/',
+          path: '',
           name: 'Default',
           component: () => import('@/views/default/index.vue'),
         },
+        // autoRoutes will automatically include your file-based routes,
+        // e.g. the file views/chat/[id].vue will create a route at /chat/:id
         ...autoRoutes,
-        ...loadDynamicRoutes(),
       ],
     },
     {
       path: '/auth',
       component: () => import('@/layouts/auth-layout/AuthLayout.vue'),
-      children: [
-        {
-          path: 'signin',
-          name: 'Signin',
-          component: () => import('@/layouts/auth-layout/components/Signin.vue'),
-        },
-        {
-          path: 'signup',
-          name: 'Signup',
-          component: () => import('@/layouts/auth-layout/components/Signup.vue'),
-        },
-      ],
+    },
+    {
+      path: '/current-plan',
+      name: 'CurrentPlan',
+      component: () => import('@/components/PricingPlain.vue'),
+    },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('@/views/profileVue.vue'),
+    },
+    {
+      path: '/getapp',
+      name: 'GetApp',
+      component: () => import('@/components/GetApp.vue'),
     },
   ],
 });
 
-export const addDynamicRoute = (review) => {
-  const newRoute = {
-    path: review.route,
-    name: review.name,
-    component: () => import('@/views/dashboard/index.vue'), // Use a generic component for dynamic routes
-  };
-  router.addRoute(newRoute);
-};
-
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
-  const user = authStore.getUser();
 
-  // authStore.checkIntegrity();
-
-  // console.log("User: ", user);
-  // console.log('AuthStore:', authStore);
-
-  // console.log("Heading to: ", to.path);
-  // console.log("Here from: ", from);
-  if (to.meta.middleware === "auth") {
-    // console.log("Going to auth middleware...");
+  if (to.meta.middleware === 'auth') {
     if (authStore.isAuthenticated) {
-      // console.log("Authenticated");
       next();
     } else {
-      console.log("Not authenticated");
+      console.log('Not authenticated');
       next(false);
-      router.push({path: "/auth", hash: "#login"});
-
+      if(to.path == '/auth'){
+        router.push({ path: '/auth', hash: '#login' });
+      }
+      router.push({ path: '/auth', hash: '#login' });
     }
   } else {
-    if (authStore.isAuthenticated && to.path.startsWith("/auth")) {
-      if (!(to.path === "/auth")) {
-        router.push("/"); // Redirect to home
-      }
+    if (authStore.isAuthenticated && to.path.startsWith('/auth') && to.path == '/auth') {
+      router.push('/');
     }
+    next();
   }
-
-  next();
-  return
 });
+
 export default router;

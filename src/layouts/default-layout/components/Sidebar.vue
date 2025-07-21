@@ -2,10 +2,10 @@
   <aside
     v-bind="$attrs"
     id="logo-sidebar"
-    class="fixed top-0 left-0 z-40  lg:w-[300px] w-64 h-screen pt-14 transition-transform bg-white border-r border-gray-200 sm:translate-x-0 dark:bg-gray-800 dark:border-gray-700"
+    class="fixed top-0 left-0 z-40 lg:w-[300px] w-64 h-screen pt-14 transition-transform bg-white border-r border-gray-200 sm:translate-x-0 dark:bg-gray-800 dark:border-gray-700"
     aria-label="Sidebar"
   >
-    <div class="h-5/6  pt-2 px-3 pb-4 overflow-y-auto bg-white dark:bg-gray-800 custom-scrollbar">
+    <div class="h-5/6 pt-2 px-3 pb-4 overflow-y-auto bg-white dark:bg-gray-800 custom-scrollbar">
       <button
         class="flex justify-between items-center w-full border hover:bg-gray-200 p-2 rounded-lg mt-3 mb-1 text-sm text-start px-2"
         @click="reviewStore.toggleShowModal"
@@ -25,7 +25,7 @@
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
-            d="M10.779 17.779 4.36 19.918 6.5 13.5m4.279 4.279 8.364-8.643a3.027 3.027 0 0 0-2.14-5.165 3.03 3.03 0 0 0-2.14.886L6.5 13.5m4.279 4.279L6.499 13.5m2.14 2.14 6.213-6.504M12.75 7.04 17 11.28"
+            d="M10.779 17.779L4.36 19.918 6.5 13.5m4.279 4.279l8.364-8.643a3.027 3.027 0 0 0-2.14-5.165 3.03 3.03 0 0 0-2.14.886L6.5 13.5m4.279 4.279L6.499 13.5m2.14 2.14l6.213-6.504M12.75 7.04L17 11.28"
           />
         </svg>
       </button>
@@ -56,44 +56,41 @@
             v-show="dropdownStates[category]"
             class="ml-4 space-y-1 border-l-2 border-gray-200 dark:border-gray-600"
           >
-            <!-- Review listing with three-dot dropdown menu -->
+            <!-- Chat listing with three-dot dropdown menu -->
             <div
-              v-for="review in groupedReviews[category]"
-              :key="review.route"
+              v-for="chat in groupedChats[category] || []"
+              :key="chat.id"
               class="relative flex items-center justify-between px-3 py-1.5 mx-1 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              :class="{ 'bg-gray-100 dark:bg-gray-700': isRouteActive(review.route) }"
-
+              :class="{ 'bg-gray-100 dark:bg-gray-700': isRouteActive(chat.id) }"
             >
               <router-link
-                :to="review.route"
+                :to="`/review/${chat.id}`"
                 class="truncate flex-grow"
               >
-                {{ review.name }}
+                {{ chat.name }}
               </router-link>
               <button
-                @click.stop="toggleReviewDropdown(review.route)"
+                @click.stop="toggleReviewDropdown(chat.id)"
                 class="p-1"
               >
                 <!-- Three-dot icon -->
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M6 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm8 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm-4 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"
-                  />
+                  <path d="M6 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm8 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm-4 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
                 </svg>
               </button>
               <!-- Dropdown menu -->
               <div
-                v-if="activeDropdown === review.route"
+                v-if="activeDropdown === chat.id"
                 class="absolute right-0 mt-8 w-32 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-50"
               >
                 <button
-                  @click="handleRename(review.route)"
+                  @click="handleRename(chat.id)"
                   class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                   Rename
                 </button>
                 <button
-                  @click="handleDelete(review.route)"
+                  @click="handleDelete(chat.id)"
                   class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                   Delete
@@ -104,16 +101,22 @@
         </div>
       </div>
     </div>
+
     <div class="absolute sm:bottom-0 bottom-2 left-0 right-0 p-2 bg-white dark:bg-gray-800 sm:border-t border-gray-200 dark:border-gray-700">
       <div class="sm:space-y-2 space-y-0">
         <button
           class="sm:flex hidden items-center justify-start w-full gap-2 px-4 py-1.5 text-sm font-medium text-white bg-transparent border border-red-500 rounded-lg hover:bg-gray-100 focus:ring-4 focus:ring-red-50 dark:bg-transparent dark:hover:bg-gray-100 dark:focus:ring-red-50 transition-colors"
         >
-        <svg class="h-6 w-6 text-gray-500"  width="10" height="10" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z"/>  <rect x="7" y="4" width="10" height="16" rx="1" />  <line x1="11" y1="5" x2="13" y2="5" />  <line x1="12" y1="17" x2="12" y2="17.01" /></svg>
-        <span class="text-md text-gray-500">Get App</span>
-        <span class="bg-red-500 px-2 py-1 text-sm rounded-lg">Beta</span>
+          <svg class="h-6 w-6 text-gray-500" width="10" height="10" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path stroke="none" d="M0 0h24v24H0z"/>
+            <rect x="7" y="4" width="10" height="16" rx="1" />
+            <line x1="11" y1="5" x2="13" y2="5" />
+            <line x1="12" y1="17" x2="12" y2="17.01" />
+          </svg>
+          <span class="text-md text-gray-500">Get App</span>
+          <span class="bg-red-500 px-2 py-1 text-sm rounded-lg">Beta</span>
         </button>
-        
+
         <button
           class="flex items-center justify-start w-full gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 transition-colors"
         >
@@ -132,54 +135,54 @@
     </div>
   </aside>
 
-  <!-- Modal for adding/updating reviews -->
-  <fwb-modal size="md" v-if="reviewStore.isShowModal" @close="reviewStore.closeModal">
-    <template #header>
-      <div class="flex items-center text-lg">
-        {{ reviewStore.isEditing ? "Update Review Name" : "Write name of your review" }}
-      </div>
-    </template>
-    <template #body>
-      <input
-        type="text"
-        class="w-full"
-        placeholder="Enter Review Name"
-        v-model="reviewStore.reviewName"
-      />
-      <!-- Only display type options when adding a new review -->
-      <div v-if="!reviewStore.isEditing" class="flex gap-3 flex-wrap my-4 w-full">
-        <label
-          v-for="option in options"
-          :key="option.value"
-          class="flex flex-1 items-center justify-center gap-3 cursor-pointer border border-gray-300 rounded-md py-2 transition-all duration-200 hover:bg-gray-200"
-          :class="{ 'bg-gray-200': selectedOption === option.value }"
-        >
-          <input
-            type="radio"
-            name="reviewOptions"
-            :value="option.value"
-            v-model="selectedOption"
-            class="hidden"
-          />
-          <span class="text-lg font-medium">{{ option.label }}</span>
-        </label>
-      </div>
+  <!-- Teleport the modal to the body so it shows full screen -->
+  <teleport to="body">
+    <fwb-modal size="md" v-if="reviewStore.isShowModal" @close="reviewStore.closeModal">
+      <template #header>
+        <div class="flex items-center text-lg">
+          {{ reviewStore.isEditing ? "Update Review Name" : "Write name of your review" }}
+        </div>
+      </template>
+      <template #body>
+        <input
+          type="text"
+          class="w-full"
+          placeholder="Enter Review Name"
+          v-model="reviewStore.reviewName"
+        />
+        <!-- Only display type options when adding a new review -->
+        <div v-if="!reviewStore.isEditing" class="flex gap-3 flex-wrap my-4 w-full">
+          <label
+            v-for="option in options"
+            :key="option.value"
+            class="flex flex-1 items-center justify-center gap-3 cursor-pointer border border-gray-300 rounded-md py-2 transition-all duration-200 hover:bg-gray-200"
+            :class="{ 'bg-gray-200': selectedOption === option.value }"
+          >
+            <input
+              type="radio"
+              name="reviewOptions"
+              :value="option.value"
+              v-model="selectedOption"
+              class="hidden"
+            />
+            <span class="text-lg font-medium">{{ option.label }}</span>
+          </label>
+        </div>
 
-      <button
-        :disabled="reviewStore.isEditing ? !reviewStore.reviewName : !selectedOption"
-        class="w-full bg-black p-3 text-white my-4"
-        @click="reviewStore.isEditing ?
-          reviewStore.confirmUpdate(router) :
-          reviewStore.addReview(router, selectedOption)"
-      >
-        Submit
-      </button>
-    </template>
-  </fwb-modal>
+        <button
+          :disabled="reviewStore.isEditing ? !reviewStore.reviewName : !selectedOption"
+          class="w-full bg-black p-3 text-white my-4"
+          @click="reviewStore.isEditing ? reviewStore.confirmUpdate(router) : reviewStore.addReview(router, selectedOption)"
+        >
+          Submit
+        </button>
+      </template>
+    </fwb-modal>
+  </teleport>
 </template>
 
 <script lang="ts">
-import { ref, watch, computed } from "vue";
+import { ref, watch, computed, onMounted } from "vue";
 import { FwbModal } from "flowbite-vue";
 import { useRouter } from "vue-router";
 import { useReviewStore } from "@/stores/review";
@@ -192,7 +195,12 @@ export default {
   setup() {
     const reviewStore = useReviewStore();
     const router = useRouter();
-    
+
+    // Call fetchChats on mount so that the menu is populated
+    onMounted(() => {
+      reviewStore.fetchChats();
+    });
+
     // Dropdown states for each category in the sidebar
     const dropdownStates = ref({
       security: false,
@@ -200,17 +208,24 @@ export default {
       efficiency: false,
     });
 
-    // Group reviews by category
-    const groupedReviews = computed(() => {
-      return reviewStore.historyReview.reduce((acc: any, review) => {
-        review.options.forEach((option: string) => {
-          if (!acc[option]) acc[option] = [];
-          acc[option].push(review);
-        });
+    // Map chat_type codes to category names
+    const typeToCategory: Record<string, string> = {
+      S: "security",
+      E: "efficiency",
+      T: "styling",
+    };
+
+    // Group chats by their category (derived from chat_type)
+    const groupedChats = computed(() => {
+      return reviewStore.chats.reduce((acc: any, chat: any) => {
+        const category = typeToCategory[chat.chat_type] || "others";
+        if (!acc[category]) acc[category] = [];
+        acc[category].push(chat);
         return acc;
       }, {});
     });
 
+    // Toggle dropdown for each category
     const toggleDropdown = (category: string) => {
       const currentState = dropdownStates.value[category];
       // Close all dropdowns first
@@ -239,9 +254,9 @@ export default {
       return icons[category as keyof typeof icons];
     };
 
-    // Helper to check if a route is active
-    const isRouteActive = (route: string) =>
-      router.currentRoute.value.path === route;
+    // Helper to check if a route is active by comparing to `/chat/{id}`
+    const isRouteActive = (id: string) =>
+      router.currentRoute.value.path === `/chat/${id}`;
 
     // Options for the modal form (radio buttons)
     const options = [
@@ -249,11 +264,11 @@ export default {
       { label: "Efficiency", value: "efficiency" },
       { label: "Styling", value: "styling" },
     ];
-    
-    // Use a single ref for radio button selection (for adding new reviews)
+
+    // Use a single ref for radio button selection (for adding new chats)
     const selectedOption = ref<string>("");
 
-    // Watch for editing state changes to reset the radio selection when not editing
+    // Reset radio selection when editing state changes
     watch(
       () => reviewStore.isEditing,
       (isEditing) => {
@@ -263,29 +278,25 @@ export default {
       }
     );
 
-    // Local state for which review dropdown is active (by review.route)
+    // Local state for which chat dropdown is active (by chat id)
     const activeDropdown = ref<string | null>(null);
 
-    const toggleReviewDropdown = (route: string) => {
-      activeDropdown.value = activeDropdown.value === route ? null : route;
+    const toggleReviewDropdown = (id: string) => {
+      activeDropdown.value = activeDropdown.value === id ? null : id;
     };
 
-    const handleRename = (route: string) => {
-      const index = reviewStore.historyReview.findIndex(
-        (r) => r.route === route
-      );
-      if (index !== -1) {
-        reviewStore.updateReview(index);
+    const handleRename = (id: string) => {
+      const chat = reviewStore.chats.find((c) => c.id === id);
+      if (chat) {
+        reviewStore.updateReview(chat);
       }
       activeDropdown.value = null;
     };
 
-    const handleDelete = (route: string) => {
-      const index = reviewStore.historyReview.findIndex(
-        (r) => r.route === route
-      );
-      if (index !== -1) {
-        reviewStore.deleteReview(index, router);
+    const handleDelete = (id: string) => {
+      const chat = reviewStore.chats.find((c) => c.id === id);
+      if (chat) {
+        reviewStore.deleteReview(chat, router);
       }
       activeDropdown.value = null;
     };
@@ -294,7 +305,7 @@ export default {
       reviewStore,
       router,
       dropdownStates,
-      groupedReviews,
+      groupedChats,
       toggleDropdown,
       getCategoryIcon,
       isRouteActive,

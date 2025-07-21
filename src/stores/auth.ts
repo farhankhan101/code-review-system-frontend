@@ -115,8 +115,8 @@ export const useAuthStore = defineStore("auth", () => {
     user.value = {} as User;
     errors.value = [];
     // Simulating token removal without JwtService
-    // localStorage.removeItem('access_token');
-    // localStorage.removeItem('refresh_token');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     JwtService.destroyTokens();
     localStorage.removeItem('user');
     router.push({path: "/auth", hash: "#login"});
@@ -196,7 +196,7 @@ export const useAuthStore = defineStore("auth", () => {
 
   async function login(credentials: Credentials) {
     try {
-      const response = await axios.post("/api/v2/user/auth/obtain_token/", {
+      const response = await axios.post("http://127.0.0.1:8000/api/v2/user/auth/obtain_token/", {
         account: credentials.account,
         password: credentials.password,
       }, {headers: {'Content-Type': 'application/json'}});
@@ -265,7 +265,7 @@ export const useAuthStore = defineStore("auth", () => {
 
   async function fetchUserData() {
     try {
-      const response = await ApiService.get(`/api/v2/users/user/${user.value.id}`);
+      const response = await ApiService.get(`/api/v2/user/user/${user.value.id}`);
       const authUser = response.data as User;
       setAuth(authUser, false);
     } catch (error) {
