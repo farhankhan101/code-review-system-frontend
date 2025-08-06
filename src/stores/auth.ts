@@ -3,43 +3,21 @@ import { defineStore } from "pinia";
 import ApiService from "@/core/services/ApiService";
 import Swal from "sweetalert2/dist/sweetalert2.js";
 import JwtService from "@/core/services/JwtService";
-import { type BaseAccount } from "./accounts";
+// Removed unused import: import { type BaseAccount } from "./accounts";
 import { jwtDecode } from "jwt-decode";
 import axios, { AxiosError } from "axios";
 import { processErrors } from "@/core/helpers/processing";
 import router from "@/router";
 import { useRouter } from 'vue-router';
 
-// export interface Individual {
-//   id: number;
-//   first_name: string;
-//   last_name: string;
-//   email_address: string;
-//   mobile_number?: string;
-//   date_of_birth: string;
-//   residence_address?: string;
-//   residence_country?: string;
-// }
-
 export interface User {
   id: number;
   username: string;
   email: string;
-//   mobile_number?: string;
+  access_token?: string;  // Added missing property
+  refresh_token?: string; // Added missing property
+  // mobile_number?: string;
 }
-
-// export interface User extends BaseUser {
-//   first_name?: string;
-//   last_name?: string;
-//   is_active: boolean;
-//   is_staff: boolean;
-//   is_superuser: boolean;
-//   access_token?: string;
-//   refresh_token?: string;
-//   primary_individual: Individual | Object;
-//   primary_account: BaseAccount | null;
-//   last_fetched: string;
-// }
 
 export interface Credentials {
   account: string;
@@ -53,18 +31,6 @@ export interface SignupData {
   password_confirmation: string;
 }
 
-// export interface ProfileData {
-//   first_name: string;
-//   last_name: string;
-//   country: string;
-//   currency: string;
-// }
-
-// export interface ImageData {
-//   name: string, 
-//   type: string,
-//   size: number,
-// }
 export const useAuthStore = defineStore("auth", () => {
   const errors = ref({});
   const user = ref<User>({} as User);
@@ -73,7 +39,7 @@ export const useAuthStore = defineStore("auth", () => {
   const isAuthenticated = computed(() => {
     return (Object.keys(user.value).length>0 && JwtService.getAccessToken() !== '' && JwtService.getRefreshToken() !== '');
   });
-  // implement wearning - something wrong with account
+  
   const authModule = ref<"login" | "signup" | "resetPassword" | "warning">("login");
 
   const switchAuthModule = (module: "login" | "signup" | "resetPassword" | "warning") => {
@@ -88,24 +54,12 @@ export const useAuthStore = defineStore("auth", () => {
   function setAuth(authUser: User, modifyTokens: boolean = true) {
     setUser(authUser);
     errors.value = {};
-    // Simulating token saving without JwtService
-    // localStorage.setItem('access_token', authUser.access_token || '');
-    // localStorage.setItem('refresh_token', authUser.refresh_token || '');
+    
     if (modifyTokens) {
       JwtService.saveAccessToken(authUser.access_token || '');
       JwtService.saveRefreshToken(authUser.refresh_token || '');
     }
   }
-
-//   const setPrimaryIndividial = (individual: Individual) => {
-//     user.value.primary_individual = individual;
-//     localStorage.setItem('user', JSON.stringify(user.value));
-//   }
-
-//   const setPrimaryAccount = (account: BaseAccount) => {
-//     user.value.primary_account = account;
-//     localStorage.setItem('user', JSON.stringify(user.value));
-//   }
 
   function setError(error: any) {
     errors.value = { ...error };
@@ -114,7 +68,6 @@ export const useAuthStore = defineStore("auth", () => {
   function purgeAuth() {
     user.value = {} as User;
     errors.value = [];
-    // Simulating token removal without JwtService
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     JwtService.destroyTokens();
@@ -122,40 +75,15 @@ export const useAuthStore = defineStore("auth", () => {
     router.push({path: "/auth", hash: "#login"});
   }
 
-//   const checkIntegrity = () => {
-//     if (isAuthenticated.value) {
-//       if (user.value.primary_account) {
-//         const givenDate = new Date(user.value.last_fetched);
-//         const currentDate = new Date();
-
-//         const differenceInMilliseconds = currentDate.getTime() - givenDate.getTime();
-//         const differenceInMinutes = differenceInMilliseconds / (1000 * 60);
-
-//         if (differenceInMinutes >= 5) {
-//           fetchUserData();
-//         }
-//       } else {
-//         fetchUserData();
-//       }
-//     }
-//   }
-
   async function signup(signupData: SignupData) {
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/v2/user/create_user/", {
+      const response = await ApiService.post("/api/v2/user/create_user/", {
         username: signupData.username,
         email: signupData.email,
         password1: signupData.password,
         password2: signupData.password_confirmation
-      }, {headers: {'Content-Type': 'application/json'}});
-      // const authUser = {
-      //   ...response.data.user,
-      //   access_token: response.data.access,
-      //   refresh_token: response.data.refresh,
-      // };
-      // setAuth(authUser);
-      // console.log('Auth user:', authUser);
-      // setAuth(authUser);
+      });
+      
       try {
         await login({account: signupData.username, password: signupData.password});
       } catch (error) {
@@ -175,58 +103,36 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
-//   async function completeProfile(profileData: ProfileData, imageData: ImageData) {
-//     try {
-//       const response = await axios.post("/api/v2/accounts/profilecompletion/", {
-//         first_name: profileData.first_name,
-//         last_name: profileData.last_name,
-//         country: profileData.country,
-//         currency: profileData.currency,
-//         image: imageData
-//       }, { headers: { 'Content-Type': 'application/json' } });
-  
-//     }catch (error) {
-//       if(error.message && error.message == 'Network Error'){
-//         setError({ title: "Error!", message: error.message });
-//       }else{
-//         setError({ title: "An unknown error has occured!", message: "Please reload the page and try again or contact FlexUp support." });
-//       }
-//     }
-//   }
-
   async function login(credentials: Credentials) {
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/v2/user/auth/obtain_token/", {
+      const response = await ApiService.post("/api/v2/user/auth/obtain_token/", {
         account: credentials.account,
         password: credentials.password,
-      }, {headers: {'Content-Type': 'application/json'}});
-      const authUser = {
+      })
+      
+      const authUser: User = {
         ...response.data.user,
         access_token: response.data.access,
         refresh_token: response.data.refresh,
       };
 
-      // setAuth(authUser);
       setAuth(authUser);
     } catch (error: AxiosError|any) {
-
-        if (error.message == "Network Error"){
-          setError({ title: "Error!", message: error.message });
+      if (error.message == "Network Error"){
+        setError({ title: "Error!", message: error.message });
+      } else {
+        if (error?.response.status === 401) {
+          setError({ title: "Sorry, can't sign you in...", message: 'The username and/or password you provided are in correct.' });
         } else {
-          if (error?.response.status === 401) {
-            setError({ title: "Sorry, can't sign you in...", message: 'The username and/or password you provided are in correct.' });
-          } else {
-            setError({ title: "An unknown error has occured!", message: "Please reload the page and try again or contact FlexUp support." });
-          }
+          setError({ title: "An unknown error has occured!", message: "Please reload the page and try again or contact FlexUp support." });
         }
-        
+      }
     }
   }
 
   function logout() {
     purgeAuth();
   }
-
 
   function forgotPassword() {
     // Forgot password logic removed
@@ -244,21 +150,18 @@ export const useAuthStore = defineStore("auth", () => {
     const token = JwtService.getAccessToken();
     if (token) {
       try {
-        const decodedToken = jwtDecode<JwtPayload>(token); //error resolve kr la yahan sa 
+        const decodedToken = jwtDecode<JwtPayload>(token);
         const currentTime = Date.now() / 1000;
   
         if (decodedToken.exp > currentTime) {
           return true;
         } else {
           return false;
-          // purgeAuth();
         }
       } catch (error) {
-        // purgeAuth();
         return false;
       }
     } else {
-      // purgeAuth();
       return false;
     }
   }
@@ -303,5 +206,3 @@ export const useAuthStore = defineStore("auth", () => {
     fetchUserData,
   };
 });
-
-// access_token, refresh_token

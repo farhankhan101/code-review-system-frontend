@@ -1,6 +1,8 @@
 // vite.config.ts
 import { defineConfig } from "file:///D:/Fyp/code-review-system-frontend/node_modules/vite/dist/node/index.js";
 import vue from "file:///D:/Fyp/code-review-system-frontend/node_modules/@vitejs/plugin-vue/dist/index.mjs";
+import { VitePWA } from 'vite-plugin-pwa';
+
 import { fileURLToPath, URL } from "node:url";
 import VueRouter from "file:///D:/Fyp/code-review-system-frontend/node_modules/unplugin-vue-router/dist/vite.js";
 var __vite_injected_original_import_meta_url = "file:///D:/Fyp/code-review-system-frontend/vite.config.ts";
@@ -10,7 +12,33 @@ var vite_config_default = defineConfig({
       routesFolder: "src/views",
       dts: true
     }),
-    vue()
+    vue(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+      manifest: {
+        name: 'AI Powered Code Review System',
+        short_name: 'Code Review',
+        description: 'Code smarter, not harder. AI-powered code review that helps you write clean, secure, and efficient code.',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
+        display: 'standalone',
+        start_url: '/',
+        icons: [
+          {
+            src: 'codereview.png',        // Your 192x192 icon
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: 'codereview-512.png',    // Your 512x512 icon
+            sizes: '512x512',
+            type: 'image/png'
+          }
+        ]
+      }
+
+    })
   ],
   resolve: {
     alias: {

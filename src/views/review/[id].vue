@@ -1,67 +1,314 @@
 <template>
-  <div class="flex flex-col items-center min-h-full bg-gray-100">
-    <!-- (Optional) Display Chat Details from Review Store -->
-    <div v-if="chat" class="mb-4 p-4 md:bg-white md:mt-0 mt-2 bg-transparent md:shadow rounded-md w-full sm:max-w-4xl text-center ">
-      <h2 class="sm:text-lg text-xs font-bold">Review: {{ chat.name || chat.id }}</h2>
+  <div class="flex flex-col items-center min-h-full bg-gray-50">
+    <!-- Chat Details Header -->
+    <div v-if="chat" class="mb-4 p-4 md:bg-transparent md:mt-0 mt-2 bg-transparent rounded-md w-full sm:max-w-4xl text-center">
+      <h2 class="sm:text-sm text-xs">{{ chat.name || chat.id }}</h2>
+      
+      <!-- Repository Analysis Status -->
+      <div v-if="chat.github_repo_url" class="mt-2">
+        <div class="text-xs text-gray-600 mb-1">
+          Repository: <a :href="chat.github_repo_url" target="_blank" class="text-blue-600 hover:underline">{{ chat.github_repo_url }}</a>
+        </div>
+        <div 
+          v-if="reviewStore.analysisStatus !== 'C'" 
+          class="flex items-center justify-center space-x-2 text-xs"
+        >
+          <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500"></div>
+          <span class="text-gray-600">
+            {{ getAnalysisStatusText(reviewStore.analysisStatus) }}
+          </span>
+        </div>
+        <div v-else class="text-xs text-green-600">
+          ✓ Analysis Complete
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Display -->
+    <div v-if="messageStore.error" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded w-full sm:max-w-4xl text-center text-sm">
+      {{ messageStore.error }}
+      <button @click="messageStore.error = null" class="ml-2 text-red-500 hover:text-red-700">✕</button>
     </div>
 
     <!-- Chat messages container -->
-    <div
-      class="content md:w-[800px] w-full mt-14 h-[290px]"
-      style="max-height: 290px; overflow-y: auto"
-    >
+    <div class="content md:w-[800px] w-full md:mt-0 
+      h-[65vh] max-h-[65vh] 
+      sm:h-[65vh] sm:max-h-[65vh] 
+      md:w-[800px] md:h-[60vh] md:max-h-[60vh] 
+      lg:h-[60vh] lg:max-h-[60vh] 
+      xl:h-[59vh] 2xl:max-h-[59vh]
+      2xl:h-[63vh] 2xl:max-h-[63vh]
+      
+    sm:p-0 p-3 overflow-y-auto scrollbar-hide" ref="messagesContainer">
+      <!-- Loading State -->
       <div v-if="messageStore.isLoading" class="text-center p-4">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
         Loading messages...
       </div>
-      <div v-if="messageStore.error" class="text-red-500 text-center p-4">
-        {{ messageStore.error }}
+      
+      <!-- Repository Overview Display (Accordion) -->
+      <div v-else-if="repoOverview" class="mb-6">
+        <div class="flex items-start space-x-3 max-w-[90%] md:max-w-[80%]">
+          <!-- AI Avatar -->
+          <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mt-1">
+            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          
+          <!-- Message Content -->
+          <div class="flex-1">
+            <div class="flex items-center mb-2">
+              <span class="text-sm font-medium text-gray-900">AI Assistant</span>
+              <span class="ml-2 text-xs text-gray-500">Repository Analysis</span>
+              
+              <!-- TTS Button for Repository Overview -->
+              <button 
+                @click="handleTTSClick(repoOverview, 'repo-overview')"
+                :disabled="!canUseTTS"
+                class="ml-3 p-1.5 rounded-full transition-colors duration-200"
+                :class="{
+                  'bg-blue-100 hover:bg-blue-200 text-blue-600': !isCurrentlySpeaking('repo-overview'),
+                  'bg-red-100 hover:bg-red-200 text-red-600': isCurrentlySpeaking('repo-overview'),
+                  'opacity-50 cursor-not-allowed': !canUseTTS
+                }"
+                :title="getTTSButtonTitle('repo-overview')"
+              >
+                <svg v-if="!isCurrentlySpeaking('repo-overview')" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 14.142M5 7l6-3v16l-6-3V7z"></path>
+                </svg>
+                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10h6v4H9z"></path>
+                </svg>
+              </button>
+            </div>
+            
+            <!-- Accordion Container -->
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+              <!-- Accordion Header -->
+              <button 
+                @click="toggleAccordion"
+                class="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 text-left flex items-center justify-between transition-colors duration-200"
+              >
+                <span class="font-medium text-gray-800">📋 Repository Overview</span>
+                <svg 
+                  class="w-5 h-5 text-gray-500 transition-transform duration-200"
+                  :class="{ 'rotate-180': isAccordionOpen }"
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </button>
+              
+              <!-- Accordion Body -->
+              <div 
+                v-show="isAccordionOpen"
+                class="px-4 py-4 bg-white border-t border-gray-200"
+              >
+                <div class="formatted-content" v-html="formatAIMessage(repoOverview)"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       
-      <!-- Iterate over messages and render each as a bubble -->
+      <!-- Empty State -->
+      <div v-else-if="messageStore.messages.length === 0 && !repoOverview" class="text-center p-8 text-gray-500">
+        <div class="text-4xl mb-4">💬</div>
+        <p class="text-lg mb-2">Start a conversation</p>
+        <p class="text-sm">
+          {{ reviewStore.analysisStatus === 'C' 
+            ? 'Ask questions about your code repository.' 
+            : 'Please wait for the repository analysis to complete.' 
+          }}
+        </p>
+      </div>
+      
+      <!-- Messages -->
       <div
         v-for="msg in messageStore.messages"
         :key="msg.id"
-        class="relative max-w-[90%] md:max-w-[80%] mb-4"
-        :class="{'ml-auto': msg.sender === 'U', 'mr-auto': msg.sender !== 'U'}"
+        class="mb-6"
       >
-        <div class="bg-gray-900 rounded-lg shadow-lg overflow-hidden">
-          <div class="flex items-center px-4 py-2 bg-gray-800">
-            <div class="flex space-x-2">
-              <!-- Different dot colors based on message sender -->
-              <div
-                class="w-3 h-3 rounded-full"
-                :class="msg.sender === 'U' ? 'bg-blue-500' : 'bg-red-500'"
-              ></div>
-              <div
-                class="w-3 h-3 rounded-full"
-                :class="msg.sender === 'U' ? 'bg-blue-500' : 'bg-yellow-500'"
-              ></div>
-              <div
-                class="w-3 h-3 rounded-full"
-                :class="msg.sender === 'U' ? 'bg-blue-500' : 'bg-green-500'"
-              ></div>
-            </div>
-            <div class="ml-2 text-gray-400 text-sm font-mono">
-              {{ msg.sender === 'U' ? 'You' : 'Agent' }}
-            </div>
+        <div class="flex items-start space-x-3" :class="{'flex-row-reverse space-x-reverse': msg.sender === 'U'}">
+          <!-- Avatar -->
+          <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-1" 
+               :class="msg.sender === 'U' ? 'bg-blue-600' : 'bg-gradient-to-r from-blue-500 to-purple-600'">
+            <!-- User Avatar (First letter of username) -->
+            <span v-if="msg.sender === 'U'" class="text-white text-sm font-medium">
+              {{ getUserInitial() }}
+            </span>
+            <!-- AI Avatar (Robot icon) -->
+            <svg v-else class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
           </div>
-          <div class="p-4 font-mono text-sm">
-            <pre class="text-gray-300"><code>{{ msg.message }}</code></pre>
+          
+          <!-- Message Content -->
+          <div class="flex-1 max-w-[85%]" :class="{'text-right': msg.sender === 'U'}">
+            <!-- Message Header -->
+            <div class="flex items-center mb-2" :class="{'justify-end': msg.sender === 'U'}">
+              <span class="text-sm font-medium text-gray-700">
+                {{ msg.sender === 'U' ? 'You' : 'AI Assistant' }}
+              </span>
+              
+              <!-- Action buttons container -->
+              <div class="ml-2 flex items-center space-x-2" :class="{'order-first mr-2 ml-0': msg.sender === 'U'}">
+                <!-- TTS Button for AI messages -->
+                <button 
+                  v-if="msg.sender === 'A' && msg.message && !msg.is_streaming"
+                  @click="handleTTSClick(msg.message, msg.id)"
+                  :disabled="!canUseTTS"
+                  class="p-1.5 rounded-full transition-colors duration-200"
+                  :class="{
+                    'bg-blue-100 hover:bg-blue-200 text-blue-600': !isCurrentlySpeaking(msg.id),
+                    'bg-red-100 hover:bg-red-200 text-red-600': isCurrentlySpeaking(msg.id),
+                    'opacity-50 cursor-not-allowed': !canUseTTS
+                  }"
+                  :title="getTTSButtonTitle(msg.id)"
+                >
+                  <svg v-if="!isCurrentlySpeaking(msg.id)" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 14.142M5 7l6-3v16l-6-3V7z"></path>
+                  </svg>
+                  <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10h6v4H9z"></path>
+                  </svg>
+                </button>
+
+                <!-- Streaming indicator -->
+                <div v-if="msg.is_streaming" class="flex items-center space-x-1 text-xs text-gray-500">
+                  <div class="animate-pulse w-2 h-2 rounded-full bg-blue-400"></div>
+                  <span>typing...</span>
+                </div>
+                
+                <!-- Regenerate button -->
+                <button 
+                  v-else-if="msg.sender === 'A' && !messageStore.isStreaming"
+                  @click="regenerateMessage(msg.id)"
+                  class="text-gray-400 hover:text-gray-600 text-xs px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+                  title="Regenerate response"
+                >
+                  ↻
+                </button>
+              </div>
+            </div>
+            
+            <!-- Message Text -->
+            <div class="text-sm leading-relaxed">
+              <!-- User Message (Simple) -->
+              <div v-if="msg.sender === 'U'" class="text-gray-800">
+                {{ msg.message }}
+              </div>
+              
+              <!-- AI Message (Formatted) -->
+              <div v-else class="formatted-content" v-html="formatAIMessage(msg.message)"></div>
+              
+              <!-- Error state -->
+              <div v-if="msg.error" class="mt-2 text-red-500 text-xs">
+                Failed to get response. Please try again.
+              </div>
+              
+              <!-- Streaming cursor -->
+              <span v-if="msg.is_streaming" class="animate-pulse text-gray-400">|</span>
+            </div>
           </div>
         </div>
-        <!-- Bubble tail: right for sender 'U', left otherwise -->
-        <div v-if="msg.sender !== 'U'" class="absolute -left-2 bottom-3 w-4 h-4 transform rotate-45 bg-gray-900"></div>
-        <!-- <div v-else class="absolute -right-3 bottom-3 w-4 h-4 transform -rotate-45 bg-red-500"></div> -->
+      </div>
+      
+      <!-- Streaming indicator at bottom -->
+      <div v-if="messageStore.isStreaming" class="text-center py-2">
+        <div class="inline-flex items-center space-x-2 text-sm text-gray-500">
+          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+          <span>AI is responding...</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- TTS Status Bar -->
+    <div 
+      v-if="messageStore.isSpeaking" 
+      class="w-full sm:max-w-4xl mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg"
+    >
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="flex items-center space-x-2">
+            <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            <span class="text-sm text-blue-800 font-medium">Speaking...</span>
+          </div>
+          <span class="text-xs text-blue-600 max-w-md truncate">
+            {{ getTruncatedSpeakingText() }}
+          </span>
+        </div>
+        
+        <div class="flex items-center space-x-2">
+          <!-- Pause/Resume Button -->
+          <button 
+            @click="togglePauseResume"
+            class="p-1.5 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 transition-colors"
+            :title="messageStore.isPaused ? 'Resume' : 'Pause'"
+          >
+            <svg v-if="!messageStore.isPaused" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+            </svg>
+            <svg v-else class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </button>
+          
+          <!-- Stop Button -->
+          <button 
+            @click="stopTTS"
+            class="p-1.5 rounded-full bg-red-100 hover:bg-red-200 text-red-600 transition-colors"
+            title="Stop"
+          >
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 6h12v12H6z"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
     
     <!-- Message Input Area -->
-    <CodeArea @submit="handleMessageSubmit" />
+    <CodeArea 
+      @submit="handleMessageSubmit" 
+      :disabled="!canSendMessage"
+      :placeholder="getInputPlaceholder()"
+    />
+
+    <!-- Full Page Loading Overlay -->
+    <div 
+      v-if="isPageLoading"
+      class="fixed inset-0 z-50 flex items-center justify-center"
+    >
+      <!-- Blurred background -->
+      <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+      
+      <!-- Loading content -->
+      <div class="relative z-10 text-center">
+        <!-- Spinning loader -->
+        <div class="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
+        
+        <!-- Loading text -->
+        <div class="text-white text-lg font-medium">
+          Loading...
+        </div>
+        
+        <!-- Optional subtitle -->
+        <div class="text-white text-sm opacity-75 mt-2">
+          Please wait while we process your request
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, onMounted, watch } from 'vue';
+import { defineComponent, computed, onMounted, watch, nextTick, ref, onUnmounted, getCurrentInstance } from 'vue';
 import { useRoute } from 'vue-router';
 import CodeArea from '@/layouts/default-layout/components/CodeArea.vue';
 import { useMessageStore } from '@/stores/message';
@@ -76,68 +323,550 @@ export default defineComponent({
     const messageStore = useMessageStore();
     const authStore = useAuthStore();
     const reviewStore = useReviewStore();
+    const messagesContainer = ref<HTMLElement>();
+    const repoOverview = ref<string>('');
+    const isAccordionOpen = ref(false);
+    const isPageLoading = ref(false);
+    const currentSpeakingId = ref<string | null>(null);
 
-    // Although the current user is still computed, our rendering now uses msg.sender.
     const currentUser = computed(() => authStore.getUser());
 
-    // Watch for changes in the current user.
-    watch(currentUser, (newUser, oldUser) => {
-      if (!newUser && oldUser) {
-        messageStore.clearMessages && messageStore.clearMessages();
-        reviewStore.clearChats && reviewStore.clearChats();
+    // Helper function to get chat ID safely
+    const getChatId = (): string | null => {
+      const params = route.params as { id?: string };
+      const id = params.id;
+      return (id && typeof id === 'string') ? id : null;
+    };
+
+    // Get user initial for avatar
+    const getUserInitial = (): string => {
+      const user = currentUser.value;
+      if (user && user.username) {
+        return user.username.charAt(0).toUpperCase();
       }
+      return 'U';
+    };
+
+    // Toggle accordion
+    const toggleAccordion = () => {
+      isAccordionOpen.value = !isAccordionOpen.value;
+    };
+
+    // TTS Functions
+    const canUseTTS = computed(() => {
+      return messageStore.initTTS();
     });
 
-    // Always fetch chats on mount to ensure the store is up-to-date for the current user.
-    onMounted(() => {
-      reviewStore.fetchChats();
-      initMessages();
-    });
+    const isCurrentlySpeaking = (messageId: string): boolean => {
+      return messageStore.isSpeaking && currentSpeakingId.value === messageId;
+    };
 
-    // Compute the current chat based on the route parameter.
-    const chat = computed(() => {
-      const chatId = route.params.id as string;
-      return reviewStore.chats.find((c: any) => c.id.toString() === chatId) || null;
-    });
+    const getTTSButtonTitle = (messageId: string): string => {
+      if (!canUseTTS.value) return 'Text-to-Speech not available';
+      if (isCurrentlySpeaking(messageId)) return 'Stop speaking';
+      return 'Read aloud';
+    };
 
-    // Fetch messages for the current chat.
-    const initMessages = () => {
-      const chatId = route.params.id as string;
-      if (chatId) {
-        messageStore.fetchMessages(chatId);
+    const getTruncatedSpeakingText = (): string => {
+      const text = messageStore.currentSpeakingText;
+      return text.length > 100 ? text.substring(0, 100) + '...' : text;
+    };
+
+    const handleTTSClick = (text: string, messageId: string) => {
+      if (!canUseTTS.value) return;
+
+      if (isCurrentlySpeaking(messageId)) {
+        stopTTS();
+      } else {
+        // Stop any current speech first
+        if (messageStore.isSpeaking) {
+          messageStore.stopSpeaking();
+        }
+        
+        // Start new speech
+        currentSpeakingId.value = messageId;
+        const success = messageStore.speakText(text, {
+          onStart: () => {
+            console.log('Started speaking message:', messageId);
+          },
+          onEnd: () => {
+            currentSpeakingId.value = null;
+            console.log('Finished speaking message:', messageId);
+          },
+          onError: (error) => {
+            currentSpeakingId.value = null;
+            console.error('TTS error for message:', messageId, error);
+          }
+        });
+
+        if (!success) {
+          currentSpeakingId.value = null;
+        }
       }
     };
 
-    // Watch for changes in the route parameter (e.g., navigating to a different chat).
-    watch(() => route.params.id, (newId) => {
-      if (newId) {
-        initMessages();
+    const stopTTS = () => {
+      messageStore.stopSpeaking();
+      currentSpeakingId.value = null;
+    };
+
+    const togglePauseResume = () => {
+      if (messageStore.isPaused) {
+        messageStore.resumeSpeaking();
+      } else {
+        messageStore.pauseSpeaking();
+      }
+    };
+
+    // Watch for TTS state changes
+    watch(() => messageStore.isSpeaking, (isSpeaking) => {
+      if (!isSpeaking) {
+        currentSpeakingId.value = null;
       }
     });
 
-    // Handle message submission.
-    const handleMessageSubmit = async (messageText: string) => {
-      const chatId = route.params.id as string;
-      if (chatId && messageText.trim()) {
+    // Function to show/hide full page loading
+    const showPageLoading = () => {
+      isPageLoading.value = true;
+    };
+
+    const hidePageLoading = () => {
+      isPageLoading.value = false;
+    };
+
+    // Compute the current chat
+    const chat = computed(() => {
+      const chatId = getChatId();
+      if (chatId) {
+        return reviewStore.currentChat || 
+               reviewStore.chats.find((c: any) => c.id.toString() === chatId) || 
+               null;
+      }
+      return null;
+    });
+
+    // Check if user can send messages
+    const canSendMessage = computed(() => {
+      return chat.value && 
+             reviewStore.analysisStatus === 'C' && 
+             !messageStore.isStreaming &&
+             !messageStore.isLoading &&
+             !isPageLoading.value;
+    });
+
+    // Get appropriate placeholder text
+    const getInputPlaceholder = (): string => {
+      if (!chat.value) return 'Loading...';
+      if (reviewStore.analysisStatus === 'P') return 'Repository analysis pending...';
+      if (reviewStore.analysisStatus === 'A') return 'Analyzing repository...';
+      if (reviewStore.analysisStatus === 'F') return 'Analysis failed. Please try again.';
+      if (messageStore.isStreaming) return 'AI is responding...';
+      if (isPageLoading.value) return 'Loading...';
+      return 'Ask about your code...';
+    };
+
+    // Get analysis status text
+    const getAnalysisStatusText = (status: string): string => {
+      const statusMap: Record<string, string> = {
+        'P': 'Analysis Pending',
+        'A': 'Analyzing Repository',
+        'C': 'Analysis Complete',
+        'F': 'Analysis Failed'
+      };
+      return statusMap[status] || 'Unknown Status';
+    };
+
+    // Enhanced message formatting for AI responses
+    const formatAIMessage = (message: string): string => {
+      if (!message) return '';
+      
+      let formattedMessage = message;
+      
+      // Remove common prefixes
+      formattedMessage = formattedMessage.replace(/^Based on the comprehensive analysis,?\s*/i, '');
+      formattedMessage = formattedMessage.replace(/^here's my detailed assessment:?\s*/i, '');
+
+      // Format headings (### to h3, ## to h2, # to h1)
+      formattedMessage = formattedMessage.replace(/^### (.*$)/gm, '<h3 class="text-lg font-semibold text-gray-800 mt-6 mb-3 border-b border-gray-200 pb-2">$1</h3>');
+      formattedMessage = formattedMessage.replace(/^## (.*$)/gm, '<h2 class="text-xl font-bold text-gray-800 mt-8 mb-4">$1</h2>');
+      formattedMessage = formattedMessage.replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold text-gray-800 mt-8 mb-4">$1</h1>');
+
+      // Format numbered lists
+      formattedMessage = formattedMessage.replace(/^\d+\.\s+(.*)$/gm, '<li class="mb-2 text-gray-700">$1</li>');
+      formattedMessage = formattedMessage.replace(/(<li class="mb-2 text-gray-700">.*<\/li>\s*)+/gs, '<ol class="list-decimal list-inside space-y-2 mb-4 ml-4">$&</ol>');
+
+      // Format bullet points
+      formattedMessage = formattedMessage.replace(/^-\s+(.*)$/gm, '<li class="mb-2 text-gray-700 flex items-start"><span class="w-2 h-2 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0"></span><span>$1</span></li>');
+      formattedMessage = formattedMessage.replace(/(<li class="mb-2 text-gray-700 flex items-start">.*<\/li>\s*)+/gs, '<ul class="space-y-2 mb-4">$&</ul>');
+
+      // Format code blocks with copy functionality
+      let codeBlockCounter = 0;
+      formattedMessage = formattedMessage.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, language, code) => {
+        const blockId = `code-block-${codeBlockCounter++}`;
+        const cleanCode = code.trim();
+        return `
+          <div class="relative my-4">
+            <pre class="bg-gray-100 rounded p-4 overflow-x-auto text-sm"><code class="language-${language || 'plaintext'}">${cleanCode}</code></pre>
+            <button onclick="navigator.clipboard.writeText(\`${cleanCode.replace(/`/g, '\\`')}\`)" class="absolute top-2 right-2 bg-gray-300 hover:bg-gray-400 text-gray-800 text-xs py-1 px-2 rounded">
+              Copy
+            </button>
+          </div>
+        `;
+      });
+
+      
+      // Format inline code
+      formattedMessage = formattedMessage.replace(/`([^`]+)`/g, '<code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono border">$1</code>');
+      
+      // Format bold and italic text
+      formattedMessage = formattedMessage.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-800">$1</strong>');
+      formattedMessage = formattedMessage.replace(/\*(.*?)\*/g, '<em class="italic text-gray-700">$1</em>');
+      
+      // Format paragraphs
+      formattedMessage = formattedMessage.replace(/\n\n/g, '</p><p class="mb-4 text-gray-700 leading-relaxed">');
+      formattedMessage = '<p class="mb-4 text-gray-700 leading-relaxed">' + formattedMessage + '</p>';
+      
+      // Clean up empty paragraphs
+      formattedMessage = formattedMessage.replace(/<p class="mb-4 text-gray-700 leading-relaxed"><\/p>/g, '');
+      
+      return formattedMessage;
+    };
+
+    // Auto-scroll to bottom when new messages arrive
+    const scrollToBottom = () => {
+      nextTick(() => {
+        if (messagesContainer.value) {
+          messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+        }
+      });
+    };
+
+    // Watch for new messages and scroll to bottom
+    watch(() => messageStore.messages.length, () => {
+      scrollToBottom();
+    });
+
+    // Watch for message content changes (streaming)
+    watch(() => messageStore.messages.map(m => m.message).join(''), () => {
+      scrollToBottom();
+    }, { deep: true });
+
+    // Clear stores when user changes
+    watch(currentUser, (newUser, oldUser) => {
+      if (!newUser && oldUser) {
+        messageStore.clearMessages();
+        reviewStore.chats.length = 0;
+        stopTTS(); // Stop any ongoing speech
+      }
+    });
+
+    // Initialize component
+    onMounted(async () => {
+      showPageLoading(); // Show loading when component mounts
+      
+      // Initialize TTS and wait a moment for ResponsiveVoice to load
+      setTimeout(() => {
+        if (messageStore.initTTS()) {
+          console.log('TTS initialized successfully');
+        } else {
+          console.warn('TTS initialization failed - ResponsiveVoice may not be loaded');
+        }
+      }, 1000);
+      
+      // Add global copy function
+      (window as any).copyCode = (blockId: string) => {
+        const codeElement = document.getElementById(blockId);
+        if (codeElement) {
+          const text = codeElement.textContent || '';
+          navigator.clipboard.writeText(text).then(() => {
+            // Show temporary feedback
+            const button = codeElement.closest('.relative')?.querySelector('button');
+            if (button) {
+              const originalText = button.innerHTML;
+              button.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Copied!</span>';
+              setTimeout(() => {
+                button.innerHTML = originalText;
+              }, 2000);
+            }
+          });
+        }
+      };
+
+      try {
+        await reviewStore.fetchChats();
+        const chatId = getChatId();
+        if (chatId) {
+          await reviewStore.setCurrentChat(chatId);
+          await messageStore.fetchMessages(chatId);
+          scrollToBottom();
+          startStatusPolling();
+        }
+      } finally {
+        hidePageLoading(); // Hide loading when done
+      }
+    });
+
+    // Watch for route changes
+    watch(() => (route.params as { id: string }).id, async (newId) => {
+      if (newId && typeof newId === 'string') {
+        showPageLoading(); // Show loading on route change
+        
         try {
-          // When sending a message, we mark the sender as 'U'.
-          await messageStore.sendMessage(chatId, messageText, 'U');
+          if (statusInterval) {
+            clearInterval(statusInterval);
+            statusInterval = null;
+          }
+          
+          // Stop any ongoing speech when changing routes
+          stopTTS();
+          
+          messageStore.clearMessages();
+          repoOverview.value = '';
+          isAccordionOpen.value = false;
+          await reviewStore.setCurrentChat(newId);
+          await messageStore.fetchMessages(newId);
+          scrollToBottom();
+          startStatusPolling();
+        } finally {
+          hidePageLoading(); // Hide loading when done
+        }
+      }
+    }, { immediate: false });
+
+    // Handle message submission
+    const handleMessageSubmit = async (messageText: string) => {
+      const chatId = getChatId();
+      if (chatId && messageText.trim() && canSendMessage.value) {
+        try {
+          await messageStore.sendMessage(chatId, messageText.trim());
+          scrollToBottom();
         } catch (error) {
           console.error('Error sending message:', error);
         }
       }
     };
 
+    // Regenerate AI response
+    const regenerateMessage = async (messageId: string) => {
+      try {
+        // Stop TTS if currently speaking this message
+        if (isCurrentlySpeaking(messageId)) {
+          stopTTS();
+        }
+        await messageStore.regenerateResponse(messageId);
+        scrollToBottom();
+      } catch (error) {
+        console.error('Error regenerating message:', error);
+      }
+    };
+
+    // Polling for analysis status updates
+    let statusInterval: ReturnType<typeof setInterval> | null = null;
+    
+    const startStatusPolling = () => {
+      const chatId = getChatId();
+      if (chatId && reviewStore.analysisStatus !== 'C' && reviewStore.analysisStatus !== 'F') {
+        statusInterval = setInterval(async () => {
+          try {
+            await reviewStore.getChatStatus(chatId);
+            if (reviewStore.analysisStatus === 'C' || reviewStore.analysisStatus === 'F') {
+              if (reviewStore.repoOverview && !repoOverview.value) {
+                repoOverview.value = reviewStore.repoOverview;
+              }
+              if (statusInterval) {
+                clearInterval(statusInterval);
+                statusInterval = null;
+              }
+            }
+          } catch (error) {
+            console.error('Error polling status:', error);
+            if (statusInterval) {
+              clearInterval(statusInterval);
+              statusInterval = null;
+            }
+          }
+        }, 3000);
+      } else if (reviewStore.analysisStatus === 'C' && reviewStore.repoOverview && !repoOverview.value) {
+        repoOverview.value = reviewStore.repoOverview;
+      }
+    };
+
+    // Clean up interval and TTS on unmount
+    onUnmounted(() => {
+      if (statusInterval) {
+        clearInterval(statusInterval);
+        statusInterval = null;
+      }
+      // Stop any ongoing speech when component unmounts
+      stopTTS();
+    });
+
     return {
       chat,
       messageStore,
+      reviewStore,
       currentUser,
+      messagesContainer,
+      canSendMessage,
+      repoOverview,
+      isAccordionOpen,
+      isPageLoading,
+      currentSpeakingId,
       handleMessageSubmit,
+      regenerateMessage,
+      formatAIMessage,
+      getInputPlaceholder,
+      getAnalysisStatusText,
+      getUserInitial,
+      toggleAccordion,
+      showPageLoading,
+      hidePageLoading,
+      // TTS Functions
+      canUseTTS,
+      isCurrentlySpeaking,
+      getTTSButtonTitle,
+      getTruncatedSpeakingText,
+      handleTTSClick,
+      stopTTS,
+      togglePauseResume,
     };
   },
 });
 </script>
 
 <style scoped>
-/* Add any additional component styling here */
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Animation for typing indicator */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Smooth accordion animation */
+.accordion-enter-active,
+.accordion-leave-active {
+  transition: all 0.3s ease;
+}
+
+.accordion-enter-from,
+.accordion-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* Formatted content styling */
+.formatted-content {
+  line-height: 1.7;
+}
+
+.formatted-content h1,
+.formatted-content h2,
+.formatted-content h3,
+.formatted-content h4,
+.formatted-content h5,
+.formatted-content h6 {
+  color: #1f2937;
+}
+
+.formatted-content ul,
+.formatted-content ol {
+  padding-left: 0;
+}
+
+.formatted-content li {
+  list-style: none;
+}
+
+.formatted-content pre {
+  background: #1f2937;
+  border-radius: 8px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.formatted-content code {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+/* Code block styling */
+.formatted-content pre code {
+  background: transparent;
+  padding: 0;
+  border: none;
+  color: #f9fafb;
+}
+
+/* Full page loading backdrop blur */
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+}
+
+/* TTS Button animations */
+.tts-button-enter-active,
+.tts-button-leave-active {
+  transition: all 0.2s ease;
+}
+
+.tts-button-enter-from,
+.tts-button-leave-to {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+/* Speaking indicator animation */
+@keyframes speaking-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+.speaking-indicator {
+  animation: speaking-pulse 1.5s ease-in-out infinite;
+}
+
+/* Responsive height utilities */
+@media (max-width: 767px) {
+  .h-90vh {
+    height: 90vh;
+  }
+  .h-10vh {
+    height: 10vh;
+  }
+}
+
+@media (min-width: 768px) {
+  .h-80vh {
+    height: 80vh;
+  }
+  .h-20vh {
+    height: 20vh;
+  }
+}
+
+/* Enhanced TTS status bar styling */
+.tts-status-bar {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 1px solid #93c5fd;
+}
+
+.tts-status-bar .speaking-dot {
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
 </style>

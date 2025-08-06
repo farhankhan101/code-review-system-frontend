@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { routes as autoRoutes } from 'vue-router/auto-routes'; // This plugin must be configured in your vite.config.ts
+import { routes as autoRoutes } from 'vue-router/auto-routes';
 import { useAuthStore } from '@/stores/auth';
 
 const router = createRouter({
@@ -15,8 +15,6 @@ const router = createRouter({
           name: 'Default',
           component: () => import('@/views/default/index.vue'),
         },
-        // autoRoutes will automatically include your file-based routes,
-        // e.g. the file views/chat/[id].vue will create a route at /chat/:id
         ...autoRoutes,
       ],
     },
@@ -25,8 +23,8 @@ const router = createRouter({
       component: () => import('@/layouts/auth-layout/AuthLayout.vue'),
     },
     {
-      path: '/current-plan',
-      name: 'CurrentPlan',
+      path: '/pricing',
+      name: 'pricing',
       component: () => import('@/components/PricingPlain.vue'),
     },
     {
@@ -49,19 +47,15 @@ router.beforeEach(async (to, from, next) => {
     if (authStore.isAuthenticated) {
       next();
     } else {
-      console.log('Not authenticated');
-      next(false);
-      if(to.path == '/auth'){
-        router.push({ path: '/auth', hash: '#login' });
-      }
-      router.push({ path: '/auth', hash: '#login' });
+      next({ path: '/auth', hash: '#login' });
     }
   } else {
-    if (authStore.isAuthenticated && to.path.startsWith('/auth') && to.path == '/auth') {
-      router.push('/');
+    if (authStore.isAuthenticated && to.path === '/auth') {
+      next('/');
+    } else {
+      next();
     }
-    next();
   }
 });
 
-export default router;
+export default router; // ✅ Important: default export

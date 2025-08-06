@@ -10,7 +10,21 @@
               d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z" />
           </svg>
         </button>
-        <router-link to="/" class="ml-2 text-xl font-semibold text-black dark:text-white md:visible sm:invisible invisible">Code Review</router-link>
+        <router-link
+          v-if="sidebarStore.sidebarDisplay"
+          to="/"
+          class="ml-2 text-xl font-semibold text-black dark:text-white md:visible transition-all duration-500 ease-out"
+          :class="{
+            'opacity-100 translate-x-0': sidebarStore.sidebarDisplay,
+            'opacity-0 -translate-x-5': !sidebarStore.sidebarDisplay
+          }"
+        >
+          <span class="flex font-bold flex-col space-y-0 transform transition-all duration-500 ease-out">
+            <span class="text-sm">Ai Powered</span>
+            <span class="text-sm">Code Review System</span>
+          </span>
+        </router-link>
+
       </div>
 
       <!-- Language Selector (only controls voice language) -->
@@ -44,7 +58,7 @@
               </router-link>
             </li>
             <li>
-              <router-link to="/current-plan" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600">
+              <router-link to="/pricing" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600">
                 Current Plan
               </router-link>
             </li>

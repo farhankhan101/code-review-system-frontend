@@ -1,8 +1,10 @@
 <template>
-  <div class="flex justify-center items-center w-full bg-gray-100 fixed bottom-10 p-3">
+  <div class="flex justify-center items-center w-full bg-gray-50 fixed bottom-10 lg:p-0 lg:px-0 px-3 h-[10vh] 
+        sm:h-[10vh] 
+        md:h-[20vh] 
+        lg:h-[20vh]">
     <div
-      class="bg-gray-100 flex flex-col justify-between border border-gray-300 w-full md:w-[800px] rounded-md transition-all duration-300 ease-in-out"
-      :class="inputFocused ? 'sm:h-[400px]' : contentHeight"
+      class="bg-gray-50 flex flex-col justify-between border border-gray-300 w-full md:w-[800px] rounded-md transition-all duration-300 ease-in-out"
     >
       <!-- Input Field -->
       <div class="flex-1 flex items-center gap-4 p-3">
@@ -16,11 +18,11 @@
           ref="textarea"
         ></textarea>
       </div>
-      <div class="flex justify-end rounded-md px-4 py-3 bg-gray-100">
+      <div class="flex justify-end rounded-md px-4 py-3 bg-gray-50">
         <button
           :disabled="!inputValue.trim()"
           @click="handleSubmit"
-          class="cursor-pointer hover:bg-gray-200 w-10 h-10 rounded-full border border-gray-300 p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="cursor-pointer hover:bg-gray-100 w-10 h-10 rounded-full border border-gray-300 p-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg
             class="w-6 h-6 text-gray-800"

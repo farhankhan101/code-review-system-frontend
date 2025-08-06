@@ -1,6 +1,6 @@
 <template>
     <footer
-      class="text-center w-full py-3 bg-gray-100 dark:bg-gray-800"
+      class="text-center w-full py-3 bg-gray-50 dark:bg-gray-800"
     >
       <span
         class="sm:text-sm text-xs p-2 text-gray-500 sm:text-center dark:text-gray-400"

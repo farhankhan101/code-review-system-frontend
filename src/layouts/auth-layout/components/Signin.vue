@@ -1,8 +1,9 @@
 <template>
   <div
-    class="flex items-center w-full max-w-3xl p-8 mx-auto lg:px-12 lg:w-3/5 min-h-screen"
+    class="flex flex-col justify-center items-center w-full  sm:p-0 p-8 mx-auto lg:px-12 lg:w-3/5 min-h-screen"
   >
-    <div class="w-full bg-white rounded-lg dark:bg-gray-800 p-8">
+    <h1 class="text-start text-black font-semibold text-3xl my-5 w-full ">Ai Powered Code Review System</h1>
+    <div class="w-full bg-white rounded-lg dark:bg-gray-800 ">
       <h2
         class="text-2xl font-semibold tracking-wider text-gray-800 capitalize dark:text-white"
       >
@@ -166,7 +167,7 @@
 </template>
 <script lang="ts">
 import { z } from "zod";
-import { onMounted, ref, reactive, computed, defineComponent } from "vue";
+import { ref, reactive, defineComponent } from "vue";
 import {
   ErrorMessage as VeeError,
   Field as VeeField,
@@ -181,42 +182,23 @@ import Swal from "sweetalert2";
 
 export default defineComponent({
   name: "SignIn",
-  components: {
-    VeeError,
-    VeeField,
-    VeeForm,
-  },
+  components: { VeeError, VeeField, VeeForm },
   setup() {
     const router = useRouter();
     const store = useAuthStore();
-
     const validationSchema = toTypedSchema(loginFormSchema);
+    const formData = reactive({ account: "", password: "" });
+    const signinForm = ref();
 
-    const signinForm = ref(null);
-    let checkError;
-
-    const formData = reactive({
-      account: "",
-      password: "",
-    });
-
-    const {
-      meta, // Form validation meta
-      errors, // Validation errors
-      resetForm, // Reset form method
-      validate, // Manual validation method
-      setFieldValue, // Set form field value method
-    } = useVeeForm({
+    const { meta } = useVeeForm({
       validationSchema,
       initialValues: formData,
     });
 
-    const isFormValid = computed(() => meta.value.valid);
-
-    const handleSignIn = async (formValues, { setErrors }) => {
-      const results = loginFormSchema.safeParse(formValues);
-      if (!results.success) {
-        setErrors(results.error.errors);
+    const handleSignIn = async (formValues: any, { setErrors }: any) => {
+      const result = loginFormSchema.safeParse(formValues);
+      if (!result.success) {
+        setErrors(result.error.flatten().fieldErrors);
         return Swal.fire({
           icon: "error",
           title: "Validation Error",
@@ -224,30 +206,28 @@ export default defineComponent({
         });
       }
 
-      try {
-        await store.login(formValues);
-        const checkError = Object.values(store.errors);
-        if (checkError.length === 0) {
-          router.push("/");
-        } else {
-          Swal.fire({
-            title: checkError[0] as string,
-            html: checkError[1].includes("<ul")
-              ? checkError[1]
-              : (`<span class="text-danger">${checkError[1]}</span>` as string),
-            icon: "error",
-            buttonsStyling: false,
-            confirmButtonText: "Try again!",
-            heightAuto: false,
-            customClass: {
-              confirmButton: "btn fw-semibold btn-light-danger",
-            },
-          }).then(() => {
-            store.errors = {};
-          });
-        }
-      } catch (error) {
-        console.log("fuck this", error);
+      await store.login(formValues);
+      const checkError = Object.values(store.errors);
+      if (checkError.length === 0) {
+        router.push("/");
+      } else {
+        const err1 = checkError[0] as string;
+        const err2 = checkError[1] as string;
+        Swal.fire({
+          title: err1,
+          html: err2.includes("<ul")
+            ? err2
+            : `<span class="text-danger">${err2}</span>`,
+          icon: "error",
+          buttonsStyling: false,
+          confirmButtonText: "Try again!",
+          heightAuto: false,
+          customClass: {
+            confirmButton: "btn fw-semibold btn-light-danger",
+          },
+        }).then(() => {
+          store.errors = {};
+        });
       }
     };
 
@@ -263,6 +243,7 @@ export default defineComponent({
       signinForm,
       isPasswordVisible,
       togglePasswordVisibility,
+      meta,
     };
   },
 });

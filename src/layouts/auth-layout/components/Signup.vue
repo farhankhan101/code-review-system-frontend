@@ -1,10 +1,11 @@
 <template>
-  <div class="flex items-center w-full max-w-3xl p-8 mx-auto lg:px-12 lg:w-3/5">
-    <div class="w-full">
+  <div class="flex flex-col justify-center items-center w-full sm:p-0 p-8 mx-auto lg:px-12 lg:w-3/5">
+    <h1 class="text-start text-black font-semibold text-3xl my-5 w-full ">Ai Powered Code Review System</h1>
+    
+	<div class="w-full">
       <h1 class="text-2xl font-semibold tracking-wider text-gray-800 capitalize dark:text-white">
         Get your free account now.
       </h1>
-
       <p class="mt-4 text-gray-500 dark:text-gray-400">
         Let’s get you all set up so you can verify your personal account and begin setting up your profile.
       </p>
@@ -28,7 +29,8 @@
 								</g>
 							</svg>
 						</div>
-						<VeeField type="text" name="username" :validate-on-input="true" v-model="formData.username" @input="checkUsername" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter your username" />
+						<!-- @input="checkUsername" -->
+						<VeeField type="text" name="username" :validate-on-input="true" v-model="formData.username"  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter your username" />
 					</div>
 					<div class="flex flex-col">
 						<VeeError name="username" class="text-red-600" />
@@ -54,7 +56,8 @@
 								</g>
 							</svg>
 						</div>
-						<VeeField type="email" name="email" :validate-on-input="true" v-model="formData.email" @input="checkEmail" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter email address" />
+						<!-- @input="checkEmail" -->
+						<VeeField type="email" name="email" :validate-on-input="true" v-model="formData.email"  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter email address" />
 					</div>
 					<div class="flex flex-col">
 						<VeeError name="email" class="text-red-600" />
@@ -200,242 +203,139 @@
 	</div>
 </template>
 <script lang="ts">
-import { z } from "zod";
-import { onMounted, ref, reactive, computed, defineComponent, watch } from 'vue';
-import { 
+import { ref, reactive, computed, defineComponent } from "vue";
+import {
   ErrorMessage as VeeError,
-  Field as VeeField, 
+  Field as VeeField,
   Form as VeeForm,
-  useForm as useVeeForm 
+  useForm as useVeeForm,
 } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
-import { useAuthStore } from '@/stores/auth';
-import { useRouter } from 'vue-router';
+import { useAuthStore } from "@/stores/auth";
+import { useRouter } from "vue-router";
 import { signupFormSchema } from "@/schemas/signupFormSchema";
 import Swal from "sweetalert2";
 import ApiService from "@/core/services/ApiService";
-import axios from 'axios';
 
 export default defineComponent({
-	name: "SignUp",
-	components: {
-    VeeError,
-		VeeField, VeeForm
-	},
-	setup() {
-		const router = useRouter();
-		const store = useAuthStore();
-		const isLoading = ref(false);
+  name: "SignUp",
+  components: { VeeError, VeeField, VeeForm },
+  setup() {
+    const router = useRouter();
+    const store = useAuthStore();
+    const isLoading = ref(false);
+    const usernameError = ref("");
+    const emailError = ref("");
 
-		const checkingUsername = ref(false);
-		const usernameError = ref('');
+    const validationSchema = toTypedSchema(signupFormSchema);
+    const formData = reactive({
+      username: "",
+      email: "",
+      password: "",
+      password_confirmation: "",
+    });
 
-		const checkingEmail = ref(false);
-		const emailError = ref('');
+    const { meta } = useVeeForm({
+      validationSchema,
+      initialValues: formData,
+    });
 
-		const validationSchema = toTypedSchema(signupFormSchema);
+    function debounce(func: Function, wait: number) {
+      let timeout: ReturnType<typeof setTimeout>;
+      return (...args: any[]) =>
+        new Promise((resolve, reject) => {
+          clearTimeout(timeout);
+          timeout = setTimeout(async () => {
+            try {
+              resolve(await func(...args));
+            } catch (e) {
+              reject(e);
+            }
+          }, wait);
+        });
+    }
 
-		const signupForm = ref(null);
+    // const checkAvailability = debounce(async (field: "U" | "E", value: string) => {
+    //   try {
+    //     if (field === "U") {
+    //       const response = await ApiService.query(`/api/v2/user/validate_username/${value}`, {});
+    //       usernameError.value = response.data.status === "S" ? "" : "Username is already taken";
+    //     } else {
+    //       const response = await ApiService.query(`/api/v2/user/validate_email/${value}`, {});
+    //       emailError.value = response.data.status === "S" ? "" : "Email is already taken";
+    //     }
+    //   } catch (error: any) {
+    //     if (error.message === "Network Error") {
+    //       Swal.fire({ icon: "error", title: "Error", text: `${error}` });
+    //     } else {
+    //       if (field === "U") usernameError.value = "Username is already taken";
+    //       else emailError.value = "Email is already taken";
+    //     }
+    //   }
+    // }, 500);
 
-		const formData = reactive({
-			username: '',
-			email: '',
-			password: '',
-			password_confirmation: ''
-		})
-		const anError = store.abcError
-		const { 
-			meta,       // Form validation meta
-			errors,     // Validation errors
-			resetForm,  // Reset form method
-			validate,    // Manual validation method
-			setFieldValue, // Set form field value method
-			setFieldError,
-		} = useVeeForm({
-			validationSchema,
-			initialValues: formData
-		})
-		let checkError;
-		const isFormValid = computed(() => meta.value.valid)
+    const handleSignUp = async (formValues: any, { setErrors }: any) => {
+      const result = signupFormSchema.safeParse(formValues);
+      if (!result.success) {
+        return Swal.fire({
+          icon: "error",
+          title: "Validation Error",
+          text: "Please check the form for errors.",
+        });
+      }
 
-		
-		function debounce(func, wait) {
-			let timeout;
-			return function (...args) {
-				return new Promise((resolve, reject) => {
-					clearTimeout(timeout);
-					timeout = setTimeout(async () => {
-						try {
-							const result = await func.apply(this, args);
-							resolve(result);
-						} catch (error) {
-							reject(error);
-						}
-					}, wait);
-				});
-			};
-		}
+      if (usernameError.value || emailError.value) {
+        Swal.fire({ icon: "error", title: "Please fix the errors in the form", text: "" });
+        return;
+      }
 
-		const checkAvailability = debounce(async (field, value) => {
-			try {
-				console.log('fuck you ',field,value)
-				if (field === 'U') {
-					checkingUsername.value = true;
-					try {
-						const response = await ApiService.query(`/api/v2/user/validate_username/${value}/`,{});
-						console.log('username check response:', response);
-						if (response.data.status == 'S') {
-              				usernameError.value = '';
-						} else {
-							usernameError.value = 'Username is already taken';
-						}
-					} catch (error) {
-						console.error('Username Check Error:', error);
-						if(error.message == 'Network Error'){
-							Swal.fire ({
-								'icon' : 'error',
-								'title' : 'Error' ,
-								'text' : `${error}`
-							});
-						}
-						else{
-							usernameError.value = 'Username is already taken';
-						}
-					}
-					checkingUsername.value = false;
-				} else if (field === 'E') {
-					checkingEmail.value = true;
-					try {
-						const response = await ApiService.query(`/api/v2/user/validate_email	/${value}/`, {});
-						console.log('email check response:', response);
-						
-						if (response.data.status=='S') {
-							emailError.value = '';
-						} else {
-							console.log('email is taken')
-							emailError.value = 'Email is already taken';
-						}
-					} catch (error) {
-						console.error('Email Check Error:', error);
-						if (error.message == 'Network Error') {
-							Swal.fire ({
-								'icon' : 'error',
-								'title' : 'Error' ,
-								'text' : `${error}`
-							});
-						} else {
-							emailError.value = 'Email is already taken';
-						}
-					}
-					checkingEmail.value = false;
-				}
-			} catch (error) {
-				console.error(error);
-			}
-		}, 500);
+      isLoading.value = true;
+      await store.signup(formValues);
+      const checkError = Object.values(store.errors);
+      if (checkError.length === 0) {
+        router.push({ path: "/auth", hash: "#completeProfile" });
+      } else {
+        const err1 = checkError[0] as string;
+        const err2 = checkError[1] as string;
+        Swal.fire({
+          title: err1,
+          html: err2.includes("<ul") ? err2 : `<span class="text-danger">${err2}</span>`,
+          icon: "error",
+          buttonsStyling: false,
+          confirmButtonText: "Try again!",
+          heightAuto: false,
+          customClass: { confirmButton: "btn fw-semibold btn-light-danger" },
+        }).then(() => {
+          store.errors = {};
+        });
+      }
+      isLoading.value = false;
+    };
 
-		const handleSignUp = async (formValues, { setErrors }) => {
-			console.log('Form Values:', formValues);
-			const results = signupFormSchema.safeParse(formValues);
-			console.log("setErrors:", results, setErrors)
-			if (!results.success) {
-				// setErrors(results.error.errors);
-				return Swal.fire({
-					'icon': 'error',
-					'title': 'Validation Error',
-					'text': 'Please check the form for errors.',
-				})
-			}
+    // const checkUsername = () => checkAvailability("U", formData.username);
+    // const checkEmail = () => checkAvailability("E", formData.email);
 
-			try {
+    const isPasswordVisible = ref(false);
+    const isConfirmPasswordVisible = ref(false);
+    const togglePasswordVisibility = (key: "password" | "confirm") => {
+      if (key === "confirm") isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value;
+      else isPasswordVisible.value = !isPasswordVisible.value;
+    };
 
-				isLoading.value = true;
-
-				if (usernameError.value.length>0 || emailError.value.length>0) {
-					Swal.fire({
-						icon: 'error',
-						title: 'Please fix the errors in the form',
-						text: 'Username and Email must be unique',
-					});
-					isLoading.value = false;
-					return;
-				}
-
-				await store.signup(formValues);
-				const checkError = Object.values(store.errors);
-				// console.log("pta nahi kya ha ,",checkError)
-				if (checkError.length === 0) {
-					router.push({path: '/auth', hash: '#completeProfile'});
-				} else {
-					Swal.fire({
-						title: checkError[0] as string,
-						html: checkError[1].includes('<ul')?checkError[1]:`<span class="text-danger">${checkError[1]}</span>` as string,
-						icon: 'error',
-						buttonsStyling: false,
-						confirmButtonText: 'Try again!',
-						heightAuto: false,
-						customClass: {
-							confirmButton: 'btn fw-semibold btn-light-danger',
-						},
-					}).then(() => {
-						store.errors = {};
-					});
-				}
-			} catch (error) {
-				console.log('Caught Error:', error);
-				console.error('Login failed:', error);
-				Swal.fire({
-					icon: 'error',
-					title: 'Something went wrong - Login failed...',
-					message: error.response.data
-				})
-			}
-
-			isLoading.value = false;
-		};
-
-		const checkUsername = () => {
-			console.log('Username changed')
-			if (!checkError){
-				console.log("check there", checkError)
-				checkAvailability('U', formData.username);
-			}
-		};
-
-		const checkEmail = () => {
-			console.log('Email changed')
-			if (!checkError){
-				console.log("check there", checkError)
-
-				checkAvailability('E', formData.email);
-			}
-			console.log("Form Data fuck ",formData.email)
-		};
-
-		const isPasswordVisible = ref(false);
-		const isConfirmPasswordVisible = ref(false);
-
-		const togglePasswordVisibility = (key) => {
-			if (key == 'confirm'){
-				isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value;
-			} else if (key == 'password') {
-				isPasswordVisible.value = !isPasswordVisible.value;
-			}
-		}
-
-		
-
-		return {
-			formData,
-			validationSchema,
-			handleSignUp,
-			signupForm, 
-			isLoading,
-			usernameError,
-			emailError,
-			checkUsername, checkEmail , togglePasswordVisibility,
-			isPasswordVisible, isConfirmPasswordVisible
-		};
-	}
-})
+    return {
+      formData,
+      validationSchema,
+      handleSignUp,
+      isLoading,
+      usernameError,
+      emailError,
+    //   checkUsername,
+    //   checkEmail,
+      togglePasswordVisibility,
+      isPasswordVisible,
+      isConfirmPasswordVisible,
+      meta,
+    };
+  },
+});
 </script>

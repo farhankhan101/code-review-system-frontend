@@ -20,9 +20,9 @@
 </template>
 
 <script>
-import { computed } from 'vue';
-import { useRoute } from 'vue-router'; // Import useRoute
-import { useSidebarStore } from '@/stores/dashboard';
+import { computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { useSidebarStore } from '@/stores/dashboard'; // assuming your store is named 'dashboard'
 import Sidebar from '@/layouts/default-layout/components/Sidebar.vue';
 import Header from '@/layouts/default-layout/components/Header.vue';
 import Footer from '@/layouts/default-layout/components/Footer.vue';
@@ -38,13 +38,17 @@ export default {
   },
   setup() {
     const sidebarStore = useSidebarStore();
-    const route = useRoute(); // Get current route
+    const route = useRoute();
 
-    // Define the computed property for sidebar visibility
     const isSidebarVisible = computed(() => sidebarStore.sidebarDisplay);
-
-    // Computed property to check if the route is exactly '/'
     const isRootRoute = computed(() => route.path === '/');
+
+    // Auto-hide sidebar on small screens on mounted
+    onMounted(() => {
+      if (window.innerWidth < 768) {
+        sidebarStore.sidebarDisplay = false;
+      }
+    });
 
     return {
       sidebarStore,
@@ -54,6 +58,7 @@ export default {
   },
 };
 </script>
+
 
 <style>
 ::-webkit-scrollbar {

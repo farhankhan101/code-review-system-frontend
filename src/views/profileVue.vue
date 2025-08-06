@@ -68,7 +68,7 @@
               </p>
             </div>
             <div class="flex flex-col sm:flex-row gap-3">
-              <button
+              <!-- <button
                 type="button"
                 @click="toggleEditMode"
                 class="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-custom-purple text-custom-purple rounded-lg hover:bg-purple-50 transition-all duration-200 shadow-sm text-sm sm:text-base"
@@ -87,8 +87,8 @@
                   />
                 </svg>
                 {{ isEditing ? "Cancel" : "Edit" }}
-              </button>
-              <button
+              </button> -->
+              <!-- <button
                 type="button"
                 @click="openChangePasswordDialog"
                 class="flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 shadow-sm text-sm sm:text-base"
@@ -107,7 +107,7 @@
                   />
                 </svg>
                 Change Password
-              </button>
+              </button> -->
             </div>
           </div>
 
@@ -873,7 +873,7 @@ const isPasswordFormValid = computed(() => {
 
 // Methods
 const goToDashboard = () => {
-  router.push("/dashboard");
+  router.push("/");
 };
 
 const loadProfileData = async () => {
